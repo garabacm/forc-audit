@@ -110,6 +110,7 @@ function buildEmailHTML({ firstName, tierNumber, tierName, tierDescription, expo
     <!-- Maturity block -->
     <div style="background:#2d3238;border-radius:6px;padding:24px 28px;margin-bottom:32px">
       <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase">Assessment Summary</p>
+      <p style="margin:0 0 16px;font-size:19px;font-weight:700;color:#ffffff">Your Technology Cost Maturity: ${tierName}</p>
       <p style="margin:0 0 10px;font-size:13px;color:rgba(255,255,255,0.55)">Indicative exposure: <span style="color:#ffffff;font-weight:600">${exposure} of total technology spend</span></p>
       ${illustrative ? `<p style="margin:0;font-size:12px;color:rgba(255,255,255,0.4);line-height:1.6">${illustrative}</p>` : ''}
     </div>
@@ -237,6 +238,11 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
 
     // --- Assessment Summary (exposure + illustrative — no tier name/description) ---
     sectionHeading('Assessment Summary');
+
+    needsPage(36);
+    doc.font('Helvetica-Bold').fontSize(16).fillColor(DARK)
+      .text(`Your Technology Cost Maturity: ${tierName}`, M, y, { width: USABLE });
+    y += 28;
 
     needsPage(28);
     doc.font('Helvetica').fontSize(11).fillColor(DARK);
