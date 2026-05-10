@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech - Operating Model Review | Forc Advisory</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #2d3238;
+    --surface: #363c42;
+    --surface2: #3f464d;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.2);
+    --accent: #ffffff;
+    --accent-dim: rgba(255,255,255,0.06);
+    --text: #ffffff;
+    --text-muted: rgba(255,255,255,0.65);
+    --text-dim: rgba(255,255,255,0.35);
+    --danger: #ff6b6b;
+    --warn: #ffb347;
+    --good: #6ee7b7;
+    --btn-dark: #1a1c1e;
+    --radius: 12px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .shell {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .header {
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  .brand {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--good);
+  }
+
+  .header h1 {
+    font-size: clamp(32px, 5.5vw, 46px);
+    font-weight: 700;
+    line-height: 1.12;
+    color: var(--text);
+    margin-bottom: 18px;
+    letter-spacing: -0.03em;
+  }
+
+  .header p {
+    color: rgba(255,255,255,0.88);
+    font-size: 17px;
+    font-weight: 400;
+    max-width: 500px;
+    line-height: 1.7;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 28px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.1s ease forwards;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 400;
+  }
+
+  .meta-item span:first-child {
+    color: var(--good);
+    font-size: 11px;
+  }
+
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--btn-dark);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px 28px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.2s ease forwards;
+  }
+
+  .btn-start:hover { background: #111; transform: translateY(-1px); }
+
+  .progress-wrap {
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .progress-bar {
+    height: 1px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--text);
+    border-radius: 1px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+  }
+
+  .category-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: var(--surface2);
+    border-radius: 4px;
+    padding: 4px 10px;
+    margin-bottom: 18px;
+  }
+
+  .q-number {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 500;
+    margin-bottom: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .q-text {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    font-family: var(--font);
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  .opt:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+
+  .opt.selected {
+    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+  }
+
+  .opt-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-dim);
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+
+  .opt.selected .opt-dot {
+    border-color: var(--text);
+    background: var(--text);
+  }
+
+  .opt.selected .opt-dot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--btn-dark);
+  }
+
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.1s ease forwards;
+  }
+
+  .btn-back {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 400;
+    padding: 10px 20px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover { border-color: var(--border-hover); color: var(--text); }
+
+  .btn-next {
+    background: var(--btn-dark);
+    border: none;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 28px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .btn-next.active { opacity: 1; pointer-events: all; }
+  .btn-next.active:hover { background: #111; transform: translateY(-1px); }
+
+  .results { opacity: 0; animation: fadeUp 0.6s ease forwards; }
+
+  .score-hero {
+    background: var(--btn-dark);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 48px 32px;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+
+  .score-number {
+    font-size: 52px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .score-number.low { color: var(--danger); }
+  .score-number.mid { color: var(--warn); }
+  .score-number.high { color: var(--good); }
+
+  .score-pct {
+    font-size: 32px;
+    font-weight: 300;
+    vertical-align: super;
+    letter-spacing: 0;
+  }
+
+  .score-verdict {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+
+  .score-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 300;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .exposure-block {
+    margin: 16px auto 4px;
+    max-width: 460px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .exposure-main {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 400;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .exposure-main strong { color: var(--text); font-weight: 600; }
+  .exposure-illustrative {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: block;
+  }
+
+  .cats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) { .cats { grid-template-columns: 1fr; } }
+
+  .cat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .cat-name {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .cat-bar-wrap {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .cat-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s 0.3s ease;
+  }
+
+  .cat-score-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  .cat-score-text strong { color: var(--text); font-weight: 600; }
+
+  .findings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .findings-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .findings-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--good);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .findings-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .findings-body {
+    padding: 28px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-muted);
+    font-weight: 300;
+    min-height: 120px;
+  }
+
+  .findings-body p { margin-bottom: 14px; }
+  .findings-body p:last-child { margin-bottom: 0; }
+  .findings-body strong { color: var(--text); font-weight: 500; }
+  .findings-body ul { list-style: none; margin: 14px 0; padding: 0; }
+  .findings-body ul li { padding: 8px 0 8px 18px; position: relative; border-bottom: 1px solid var(--border); }
+  .findings-body ul li:last-child { border-bottom: none; }
+  .findings-body ul li::before { content: '→'; position: absolute; left: 0; color: var(--text-dim); font-size: 12px; top: 9px; }
+
+  .loading-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--surface2);
+    border-top-color: var(--text-muted);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: var(--text-muted);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .pdf-btn-wrap {
+    text-align: center;
+    margin: 0 0 24px;
+    display: none;
+  }
+  #pdf-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 400;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #pdf-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+  .cta-card {
+    background: var(--btn-dark);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    text-align: center;
+  }
+
+  .cta-card h3 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .cta-card p {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 300;
+    margin-bottom: 24px;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.65;
+  }
+
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--text);
+    color: var(--btn-dark);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 32px;
+    border-radius: 100px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hidden { display: none !important; }
+
+  /* GATE */
+  .gate-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 128px);
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  .gate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 48px 40px;
+    width: 100%;
+  }
+
+  .gate-headline {
+    font-size: clamp(24px, 4vw, 34px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+
+  .gate-subline {
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 300;
+    margin-bottom: 36px;
+    line-height: 1.65;
+  }
+
+  .gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .gate-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 300;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .gate-input::placeholder { color: var(--text-dim); }
+  .gate-input:focus { border-color: var(--border-hover); }
+  .gate-input.invalid { border-color: var(--danger); }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--danger);
+    padding-left: 2px;
+  }
+
+  .btn-gate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--btn-dark);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px 28px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+
+  .btn-gate:hover { background: #111; transform: translateY(-1px); }
+
+  .gate-disclaimer {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-align: center;
+    margin-top: 14px;
+    letter-spacing: 0.01em;
+  }
+
+  .score-greeting {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .intro-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 20px;
+    text-align: left;
+    display: inline-block;
+  }
+  .intro-list li {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.9;
+    padding-left: 18px;
+    position: relative;
+  }
+  .intro-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- INTRO -->
+  <div id="screen-intro">
+    <div class="header">
+      <div class="brand"><span class="brand-dot"></span> Forc Advisory</div>
+      <h1>Is your tech spend<br>working for you?</h1>
+      <p>3 minutes. 12 questions.</p>
+      <p>Get a scored breakdown across:</p>
+      <ul class="intro-list">
+        <li>Visibility</li>
+        <li>Governance</li>
+        <li>Forecasting</li>
+        <li>Financial Efficiency</li>
+        <li>Strategic Alignment</li>
+      </ul>
+      <p>Plus an indicative maturity assessment and summary showing where your technology spend may be exposed.</p>
+    </div>
+    <div class="meta-row">
+      <div class="meta-item"><span>●</span> 5 categories assessed</div>
+      <div class="meta-item"><span>●</span> Takes 3–4 minutes</div>
+      <div class="meta-item"><span>●</span> Summarised findings brief</div>
+    </div>
+    <button class="btn-start" onclick="startAudit()">Start the audit →</button>
+  </div>
+
+  <!-- QUESTION -->
+  <div id="screen-question" class="hidden">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span>Tech - Operating Model Review</span>
+        <span id="progress-label">1 of 12</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:8%"></div></div>
+    </div>
+
+    <div class="q-card" id="q-card">
+      <div class="category-tag" id="q-category"></div>
+      <div class="q-number" id="q-number"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="q-options"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" id="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="btn-next" onclick="goNext()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- GATE -->
+  <div id="screen-gate" class="hidden">
+    <div class="gate-wrap">
+      <div class="gate-card">
+        <div class="brand" style="margin-bottom:32px"><span class="brand-dot"></span> Forc Advisory</div>
+        <h2 class="gate-headline">Your results are ready</h2>
+        <p class="gate-subline">Enter your details below to see your score and personalised findings brief</p>
+        <div class="gate-form">
+          <div class="field-group">
+            <input type="text" id="gate-name" class="gate-input" placeholder="First name" autocomplete="given-name">
+            <div class="field-error hidden" id="error-name">Please enter your first name</div>
+          </div>
+          <div class="field-group">
+            <input type="email" id="gate-email" class="gate-input" placeholder="Work email" autocomplete="email">
+            <div class="field-error hidden" id="error-email">Please enter your work email</div>
+          </div>
+          <button class="btn-gate" onclick="submitGate()">See my results →</button>
+          <p class="gate-disclaimer">✓ No spam. One follow-up email with your findings summary.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="screen-results" class="hidden">
+    <div class="results">
+      <div class="score-hero">
+        <div class="score-greeting hidden" id="score-greeting"></div>
+        <div class="score-label" id="score-label">Your technology cost maturity</div>
+        <div class="score-number" id="final-score">—</div>
+        <div id="final-raw-score" style="font-size:13px;color:var(--text-dim);margin-top:6px;letter-spacing:0.06em;font-weight:500"></div>
+        <div id="final-exposure" class="exposure-block"></div>
+        <div class="score-sub" id="final-sub"></div>
+      </div>
+
+      <div class="cats" id="cat-breakdown"></div>
+
+      <div class="findings-card">
+        <div class="findings-header">
+          <div class="findings-dot"></div>
+          <div class="findings-title">Diagnostic Summary</div>
+        </div>
+        <div class="findings-body" id="findings-body">
+          <div class="loading-text"><div class="spinner"></div> Analysing your responses...</div>
+        </div>
+      </div>
+
+      <div class="pdf-btn-wrap" id="pdf-btn-wrap">
+        <button id="pdf-btn" onclick="downloadPDF()">↓ Download PDF report</button>
+      </div>
+
+      <div class="cta-card">
+        <h3>Want the full picture?</h3>
+        <p>A Tech Cost Operating Model Review with Forc Advisory surfaces the exact numbers behind these red flags — and a clear plan to fix them.</p>
+        <a class="btn-cta" href="https://www.forcadvisory.com/contact#contact" target="_blank">Book a 30-minute call →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ⚠️ REPLACE THIS with your deployed Vercel URL after deployment
+// Example: https://forc-audit.vercel.app/api/generate
+const API_URL = 'https://forc-audit.vercel.app/api/generate';
+
+const questions = [
+  { id:1, category:"Visibility", categoryKey:"visibility", text:"When did you last have a single, consolidated view of your total technology cost base?", options:[{text:"We have a live view updated at least monthly",score:3},{text:"We pull this together quarterly, usually for board packs",score:2},{text:"We have done it once or twice but it is not a regular process",score:1},{text:"We have never had a single consolidated view",score:0}]},
+  { id:2, category:"Visibility", categoryKey:"visibility", text:"Do you know your top 10 technology vendors by spend, and the actual utilisation of each?", options:[{text:"Yes, we track both spend and utilisation regularly",score:3},{text:"We know the spend but do not systematically track utilisation",score:2},{text:"We have a rough idea but nothing we would rely on for decisions",score:1},{text:"No, this has never been mapped",score:0}]},
+  { id:3, category:"Governance", categoryKey:"governance", text:"Who owns the relationship between finance and your engineering or product teams when technology cost decisions are being made?", options:[{text:"A dedicated finance partner embedded in or aligned to tech",score:3},{text:"The CFO and CTO manage it with regular touchpoints",score:2},{text:"It is informal, finance gets involved when there is a budget problem",score:1},{text:"There is no structured relationship, they operate independently",score:0}]},
+  { id:4, category:"Governance", categoryKey:"governance", text:"When your technical teams evaluate a new vendor or platform, at what point does finance get involved?", options:[{text:"Before any decision, finance is part of the evaluation process",score:3},{text:"During commercial negotiation once a preferred vendor is chosen",score:2},{text:"After the contract is signed when the invoice arrives",score:1},{text:"Finance is rarely involved in vendor or platform decisions",score:0}]},
+  { id:5, category:"Budget Management", categoryKey:"budget", text:"How granular is your technology budget and how actively is it managed?", options:[{text:"We budget and track at vendor, platform, and team level with monthly reviews",score:3},{text:"We have a top level tech budget but limited granularity below that",score:2},{text:"We have a rough annual budget but it is not actively managed in-year",score:1},{text:"We do not have a formal technology budget",score:0}]},
+  { id:6, category:"Budget Management", categoryKey:"budget", text:"In the last 12 months, has a technology commitment been made that finance only found out about after the fact?", options:[{text:"No, we have full visibility before any commitment is made",score:3},{text:"Once or twice but nothing material",score:2},{text:"Yes, fairly regularly on tools below a certain threshold",score:1},{text:"Yes, including some significant ones",score:0}]},
+  { id:7, category:"Forecasting", categoryKey:"forecasting", text:"How many of your technology contracts renew automatically, and do you have a forward calendar with notice windows mapped?", options:[{text:"Yes, all auto-renewals are mapped with a 90-day advance calendar",score:3},{text:"We track the major ones but the full picture is incomplete",score:2},{text:"Most renew automatically and our tracking is patchy at best",score:1},{text:"We find out when the invoice arrives or the renewal has already processed",score:0}]},
+  { id:8, category:"Forecasting", categoryKey:"forecasting", text:"If your board asked tomorrow for a plan to reduce technology costs by 20% without impacting capability, how prepared would you be?", options:[{text:"Very prepared, we have the data and could present options immediately",score:3},{text:"Fairly prepared, it would take some analysis but we could respond quickly",score:2},{text:"We would need significant time to pull the right information together",score:1},{text:"We would not know where to start",score:0}]},
+  { id:9, category:"Financial Efficiency", categoryKey:"financial", text:"When you last renewed a major technology contract, who led that negotiation and what data did you use?", options:[{text:"Finance led it using usage data, market benchmarks, and commercial terms analysis",score:3},{text:"Procurement or finance were involved with input from the technical team",score:2},{text:"The technical team led it, finance reviewed and approved the final number",score:1},{text:"The vendor effectively led it, we reviewed what they presented and agreed",score:0}]},
+  { id:10, category:"Financial Efficiency", categoryKey:"financial", text:"Has a technology vendor increased their pricing by more than 15% at renewal in the last two years?", options:[{text:"No, our contracts include price protections or CPI-linked caps",score:3},{text:"Yes once, we challenged it and negotiated a better outcome",score:2},{text:"Yes, and we accepted most of the increase because switching felt harder",score:1},{text:"Yes, more than once, and we paid without significant challenge",score:0}]},
+  { id:11, category:"Strategic Alignment", categoryKey:"strategic", text:"Would your board or investors be satisfied with the current level of visibility and reporting on technology spend efficiency and ROI?", options:[{text:"Yes, we report on this regularly and it is a strength of our finance function",score:3},{text:"Probably, though our reporting here could be more structured",score:2},{text:"Unlikely, this is an area we know needs work",score:1},{text:"No, we do not currently report on technology spend efficiency at board level",score:0}]},
+  { id:12, category:"Strategic Alignment", categoryKey:"strategic", text:"Is there a senior finance professional in your business who understands the technical and commercial dimensions of your stack, who your CTO trusts and your CFO relies on?", options:[{text:"Yes, we have that person and they are active in tech decisions",score:3},{text:"We have someone but they are stronger on finance than the technical side",score:2},{text:"We have someone but they are closer to engineering than finance",score:1},{text:"That role does not exist in our business today",score:0}]}
+];
+
+const categoryMeta = {
+  visibility:  { name: "Visibility",          max: 6 },
+  governance:  { name: "Governance",          max: 6 },
+  budget:      { name: "Budget Management",   max: 6 },
+  forecasting: { name: "Forecasting",         max: 6 },
+  financial:   { name: "Financial Efficiency",max: 6 },
+  strategic:   { name: "Strategic Alignment", max: 6 }
+};
+
+const TIERS = {
+  1: { number: 1, name: 'Exposed',          description: 'No visibility or governance across your technology spend. High probability of duplicate tooling, unused licences, and renewal leakage. You are likely losing 8 to 20% of your tech budget right now without knowing it.', exposure: '8 to 20%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is $400k to $2M in capital waste sitting undetected. Money that could be re-invested into growth or profitability.' },
+  2: { number: 2, name: 'At Risk',           description: 'Some visibility exists but governance is patchy. You are catching some waste but missing more. The gaps are costing you more than you realise.', exposure: '4 to 10%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is $200k to $1M in preventable loss. Money that could be re-invested into growth or profitability.' },
+  3: { number: 3, name: 'Partial Visibility', description: 'You have basic controls in place but blind spots remain. Spend is tracked in parts, not as a whole. There is meaningful waste you are not seeing.', exposure: '1 to 5%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is $50k to $500k in addressable waste. Money that could be re-invested into growth or profitability.' },
+  4: { number: 4, name: 'In Control',        description: 'Good foundations. Spend is visible and mostly governed. The focus now is sharpening what you have and closing the remaining gaps.', exposure: 'under 2%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is up to $200k in remaining exposure to close.' },
+  5: { number: 5, name: 'Optimised',         description: 'Your technology spend is fully visible, governed, and aligned to business outcomes. You are in the minority. Keep it that way.', exposure: 'under 1%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, residual waste is minimal and well-managed.' }
+};
+function getTier(totalScore) {
+  if (totalScore >= 33) return TIERS[5];
+  if (totalScore >= 25) return TIERS[4];
+  if (totalScore >= 19) return TIERS[3];
+  if (totalScore >= 13) return TIERS[2];
+  return TIERS[1];
+}
+
+let current = 0;
+let answers = {};
+let capturedName = '';
+let capturedEmail = '';
+let lastCatScores = {};
+let lastTier = null;
+let findingsRawText = '';
+
+const BLOCKED_DOMAINS = ['gmail.com', 'hotmail.com', 'yahoo.com', 'yahoo.co.uk', 'outlook.com', 'outlook.co.uk', 'icloud.com', 'hotmail.co.uk', 'live.com', 'msn.com'];
+
+function startAudit() {
+  document.getElementById('screen-intro').classList.add('hidden');
+  document.getElementById('screen-question').classList.remove('hidden');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const card = document.getElementById('q-card');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'fadeUp 0.4s ease forwards';
+
+  document.getElementById('q-category').textContent = q.category;
+  document.getElementById('q-number').textContent = `Question ${q.id} of ${questions.length}`;
+  document.getElementById('q-text').textContent = q.text;
+
+  const pct = ((current + 1) / questions.length) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${current + 1} of ${questions.length}`;
+
+  const optContainer = document.getElementById('q-options');
+  optContainer.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt' + (answers[q.id] === i ? ' selected' : '');
+    btn.innerHTML = `<span class="opt-dot"></span><span>${opt.text}</span>`;
+    btn.onclick = () => selectOption(i);
+    optContainer.appendChild(btn);
+  });
+
+  updateNextBtn();
+  const backBtn = document.getElementById('btn-back');
+  backBtn.style.opacity = current === 0 ? '0.3' : '1';
+  backBtn.style.pointerEvents = current === 0 ? 'none' : 'all';
+}
+
+function selectOption(idx) {
+  const q = questions[current];
+  answers[q.id] = idx;
+  document.querySelectorAll('.opt').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+  updateNextBtn();
+}
+
+function updateNextBtn() {
+  const q = questions[current];
+  const btn = document.getElementById('btn-next');
+  const hasAnswer = answers[q.id] !== undefined;
+  btn.classList.toggle('active', hasAnswer);
+  btn.textContent = current === questions.length - 1 ? 'See my results →' : 'Continue →';
+}
+
+function goNext() {
+  if (answers[questions[current].id] === undefined) return;
+  if (current < questions.length - 1) { current++; renderQuestion(); }
+  else { showGate(); }
+}
+
+function goBack() {
+  if (current > 0) { current--; renderQuestion(); }
+}
+
+function showGate() {
+  document.getElementById('screen-question').classList.add('hidden');
+  document.getElementById('screen-gate').classList.remove('hidden');
+}
+
+function submitGate() {
+  const nameInput = document.getElementById('gate-name');
+  const emailInput = document.getElementById('gate-email');
+  const nameError = document.getElementById('error-name');
+  const emailError = document.getElementById('error-email');
+
+  let valid = true;
+
+  nameInput.classList.remove('invalid');
+  emailInput.classList.remove('invalid');
+  nameError.classList.add('hidden');
+  emailError.classList.add('hidden');
+
+  if (!nameInput.value.trim()) {
+    nameInput.classList.add('invalid');
+    nameError.textContent = 'Please enter your first name';
+    nameError.classList.remove('hidden');
+    valid = false;
+  }
+
+  const emailVal = emailInput.value.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailVal) {
+    emailInput.classList.add('invalid');
+    emailError.textContent = 'Please enter your work email';
+    emailError.classList.remove('hidden');
+    valid = false;
+  } else if (!emailRegex.test(emailVal)) {
+    emailInput.classList.add('invalid');
+    emailError.textContent = 'Please enter a valid email address';
+    emailError.classList.remove('hidden');
+    valid = false;
+  } else {
+    const domain = emailVal.split('@')[1];
+    if (BLOCKED_DOMAINS.includes(domain)) {
+      emailInput.classList.add('invalid');
+      emailError.textContent = 'Please use your work email';
+      emailError.classList.remove('hidden');
+      valid = false;
+    }
+  }
+
+  if (!valid) return;
+
+  capturedName = nameInput.value.trim();
+  capturedEmail = emailVal;
+
+  // Compute category scores for lead capture
+  // Category scores computed in showResults / generateFindings
+
+  // Email fires after AI findings complete (so email includes full text)
+
+  document.getElementById('screen-gate').classList.add('hidden');
+  showResults();
+}
+
+function showResults() {
+  document.getElementById('screen-results').classList.remove('hidden');
+
+  if (capturedName) {
+    const greetingEl = document.getElementById('score-greeting');
+    greetingEl.textContent = `Here are your results, ${capturedName}`;
+    greetingEl.classList.remove('hidden');
+  }
+
+  const catScores = { visibility: 0, governance: 0, budget: 0, forecasting: 0, financial: 0, strategic: 0 };
+  questions.forEach(q => {
+    const idx = answers[q.id] ?? 0;
+    catScores[q.categoryKey] += q.options[idx].score;
+  });
+
+  const totalScore = Object.values(catScores).reduce((a, b) => a + b, 0);
+  const tier = getTier(totalScore);
+  lastTier = tier;
+
+  const scoreEl = document.getElementById('final-score');
+  scoreEl.textContent = tier.name;
+  scoreEl.className = 'score-number';
+  const tierColors = { 1: '#ef4444', 2: '#f97316', 3: '#f59e0b', 4: '#3b82f6', 5: '#22c55e' };
+  scoreEl.style.color = tierColors[tier.number] || '';
+  document.getElementById('final-raw-score').textContent = `${totalScore} / 36`;
+  const exposureEl = document.getElementById('final-exposure');
+  exposureEl.innerHTML = `<span class="exposure-main">Your indicative exposure: <strong>${tier.exposure}</strong> of your technology spend.</span><span class="exposure-illustrative">${tier.illustrative}</span>`;
+  document.getElementById('final-sub').textContent = tier.description;
+
+  const catContainer = document.getElementById('cat-breakdown');
+  catContainer.innerHTML = '';
+
+  function ragColor(p) { return p >= 67 ? '#4ade80' : p >= 34 ? '#facc15' : '#f87171'; }
+  function ragLabel(p) { return p >= 67 ? 'Strong' : p >= 34 ? 'Developing' : 'Needs attention'; }
+
+  Object.entries(catScores).forEach(([key, score]) => {
+    const meta = categoryMeta[key];
+    const catPct = Math.round((score / meta.max) * 100);
+    const color = ragColor(catPct);
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.innerHTML = `<div class="cat-name">${meta.name}</div><div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:0%;background:${color}" data-target="${catPct}"></div></div><div class="cat-score-text"><strong>${score}/${meta.max}</strong> — ${ragLabel(catPct)}</div>`;
+    catContainer.appendChild(card);
+  });
+
+  setTimeout(() => {
+    document.querySelectorAll('.cat-bar-fill').forEach(el => { el.style.width = el.dataset.target + '%'; });
+  }, 200);
+
+  generateFindings(catScores, tier, totalScore);
+}
+
+async function generateFindings(catScores, tier, totalScore) {
+  lastCatScores = catScores;
+  const answerSummary = questions.map(q => {
+    const idx = answers[q.id] ?? 0;
+    return `Q${q.id} (${q.category}): "${q.options[idx].text}" [score: ${q.options[idx].score}/3]`;
+  }).join('\n');
+
+  const catBreakdown = Object.entries(catScores).map(([key, score]) => `${categoryMeta[key].name}: ${score}/${categoryMeta[key].max}`).join(', ');
+
+  const nameIntro = capturedName ? `Address the person as ${capturedName} in your opening sentence. ` : '';
+
+  const prompt = `You are a senior advisor at Forc Advisory. A company has just completed a Tech Cost Maturity Assessment and placed at ${tier.name} (raw score ${totalScore}/36).
+
+Category breakdown: ${catBreakdown}
+
+Their answers:
+${answerSummary}
+
+Write a short personalised findings brief using the format below. ${nameIntro}
+
+Format:
+- One opening sentence on what the maturity tier tells you. Be direct, not dramatic.
+- 4 to 5 bullet points. Each bullet is one clear sentence. Lead with the specific issue, then the business consequence — this might be a cost, a governance gap, a missed finance partnership opportunity, or a strategic risk. Reference the actual categories and answer patterns above. Mix cost recovery findings with strategic observations: where could finance be a better business partner, where does lack of vendor governance limit strategic optionality, where does contract exposure reduce the CFO's ability to plan?
+- One closing sentence (not a bullet) mentioning that Forc Advisory can run a full audit, covering both cost recovery and positioning finance as a strategic operating partner.
+
+Rules:
+- No paragraphs. No m-dashes. No hyphens inside sentences. No hyperbole. No phrases like "it is clear that", "significant impact", or "it is worth noting".
+- Each bullet point must start with "- " on its own line.
+- Bullets must be separated by a blank line from each other and from surrounding text.
+- Write like a direct, experienced colleague giving honest feedback. Conversational but precise.
+- Do not frame every finding as a cost problem. Some should read as strategic or governance observations.
+- Under 220 words total.`;
+
+  const findingsEl = document.getElementById('findings-body');
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    findingsEl.innerHTML = '<span id="findings-text"></span><span class="cursor"></span>';
+    const textEl = document.getElementById('findings-text');
+    let fullText = '';
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+              fullText += parsed.delta.text;
+              const blocks = fullText.split('\n\n').filter(b => b.trim());
+              textEl.innerHTML = blocks.map(block => {
+                const lines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
+                const hasBullets = lines.some(l => l.startsWith('- '));
+                if (!hasBullets) return `<p>${lines.join(' ')}</p>`;
+                const parts = [];
+                let bullets = [];
+                lines.forEach(l => {
+                  if (l.startsWith('- ')) {
+                    bullets.push(`<li>${l.slice(2)}</li>`);
+                  } else {
+                    if (bullets.length) { parts.push(`<ul>${bullets.join('')}</ul>`); bullets = []; }
+                    parts.push(`<p>${l}</p>`);
+                  }
+                });
+                if (bullets.length) parts.push(`<ul>${bullets.join('')}</ul>`);
+                return parts.join('');
+              }).join('');
+            }
+          } catch(e) {}
+        }
+      }
+    }
+
+    document.querySelector('.cursor')?.remove();
+    findingsRawText = fullText;
+    document.getElementById('pdf-btn-wrap').style.display = 'block';
+
+    // Send results email now that findings are ready
+    const categoryScoresNamed = {};
+    Object.entries(lastCatScores).forEach(([k, s]) => { categoryScoresNamed[categoryMeta[k].name] = s; });
+    fetch('/api/send-results-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: capturedName,
+        email: capturedEmail,
+        tierNumber: lastTier.number,
+        tierName: lastTier.name,
+        tierDescription: lastTier.description,
+        exposure: lastTier.exposure,
+        illustrative: lastTier.illustrative,
+        categoryScores: categoryScoresNamed,
+        findingsBrief: fullText
+      })
+    }).catch(err => console.error('Send results email failed:', err));
+
+  } catch(err) {
+    findingsEl.innerHTML = '<p style="color:rgba(255,255,255,0.35);font-style:italic">Could not generate findings brief. Please check your connection and try again.</p>';
+  }
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const W = 595;
+  const margin = 50;
+  const usable = W - margin * 2;
+  let y = 50;
+
+  function wrappedText(text, startY, opts) {
+    const { fontSize = 11, fontStyle = 'normal', color = [26, 26, 26], indent = 0 } = opts || {};
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', fontStyle);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(String(text), usable - indent);
+    doc.text(lines, margin + indent, startY);
+    return startY + lines.length * fontSize * 1.4;
+  }
+
+  function hRule(atY) {
+    doc.setDrawColor(210, 210, 210);
+    doc.setLineWidth(0.4);
+    doc.line(margin, atY, W - margin, atY);
+    return atY + 14;
+  }
+
+  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Top rule
+  y = hRule(y);
+
+  // Brand header
+  y = wrappedText('FORC ADVISORY', y, { fontSize: 8, fontStyle: 'bold', color: [150, 150, 150] });
+  y += 8;
+  y = wrappedText('The Tech Cost Maturity Assessment', y, { fontSize: 19, fontStyle: 'bold' });
+  y += 6;
+  const dateLine = date + (capturedName ? '  ·  ' + capturedName : '');
+  y = wrappedText(dateLine, y, { fontSize: 9, color: [140, 140, 140] });
+  y += 36;
+
+  // Score
+  doc.setFontSize(52);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(26, 26, 26);
+  doc.text(lastTier.name, margin, y);
+  y += 52 * 1.3;
+
+  const sub = document.getElementById('final-sub').textContent;
+  y = wrappedText(sub, y, { fontSize: 10, color: [100, 100, 100] });
+  y += 18;
+
+  // Dimension summary
+  y = hRule(y);
+  y = wrappedText('Category Scores', y, { fontSize: 11, fontStyle: 'bold' });
+  y += 10;
+
+  const catOrder = ['visibility', 'governance', 'budget', 'forecasting', 'financial', 'strategic'];
+
+  function pdfRagColor(p) { return p >= 67 ? [74, 222, 128] : p >= 34 ? [250, 204, 21] : [248, 113, 113]; }
+  function pdfRagLabel(p) { return p >= 67 ? 'Strong' : p >= 34 ? 'Developing' : 'Needs attention'; }
+
+  for (const key of catOrder) {
+    const score = lastCatScores[key];
+    if (score === undefined) continue;
+    const meta = categoryMeta[key];
+    const catPct = Math.round((score / meta.max) * 100);
+    const risk = pdfRagLabel(catPct);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(26, 26, 26);
+    doc.text(meta.name, margin, y);
+
+    doc.setTextColor(100, 100, 100);
+    doc.text(score + '/' + meta.max + '  —  ' + risk, W - margin, y, { align: 'right' });
+    y += 14;
+
+    // Mini progress bar
+    doc.setFillColor(230, 230, 230);
+    doc.rect(margin, y - 4, usable, 3, 'F');
+    doc.setFillColor(...pdfRagColor(catPct));
+    doc.rect(margin, y - 4, usable * (catPct / 100), 3, 'F');
+    y += 12;
+  }
+
+  y += 8;
+
+  // Diagnostic Summary
+  y = hRule(y);
+  y = wrappedText('Diagnostic Summary', y, { fontSize: 11, fontStyle: 'bold' });
+  y += 10;
+
+  const rawLines = findingsRawText.split('\n');
+  for (const line of rawLines) {
+    const trimmed = line.trim();
+    if (!trimmed) { y += 5; continue; }
+
+    if (y > 770) { doc.addPage(); y = 50; }
+
+    if (trimmed.startsWith('- ')) {
+      const bulletText = trimmed.slice(2);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('→', margin, y);
+      doc.setTextColor(26, 26, 26);
+      const bLines = doc.splitTextToSize(bulletText, usable - 14);
+      doc.text(bLines, margin + 14, y);
+      y += bLines.length * 9 * 1.4 + 4;
+    } else {
+      y = wrappedText(trimmed, y, { fontSize: 10 });
+      y += 4;
+    }
+  }
+
+  y += 14;
+
+  // Footer
+  doc.setDrawColor(210, 210, 210);
+  doc.setLineWidth(0.4);
+  doc.line(margin, y, W - margin, y);
+  y += 10;
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(150, 150, 150);
+  doc.text('Forc Advisory  —  forcadvisory.com', margin, y);
+  doc.text(date, W - margin, y, { align: 'right' });
+
+  const filename = capturedName
+    ? 'Forc-Audit-' + capturedName.replace(/\s+/g, '-') + '.pdf'
+    : 'Forc-Audit-Report.pdf';
+  doc.save(filename);
+}
+</script>
+</body>
+</html>
