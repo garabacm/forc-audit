@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
   if (!email) return res.status(400).json({ error: 'Missing email' });
 
-  const calendlyUrl = process.env.CALENDLY_URL || 'https://calendly.com/forcadvisory';
+  const calendlyUrl = process.env.CALENDLY_URL || 'https://calendly.com/chenge-forcadvisory/new-meeting';
   const name = firstName || 'there';
 
   // --- Build PDF ---
@@ -124,8 +124,10 @@ function buildEmailHTML({ firstName, tierNumber, tierName, tierDescription, expo
     </div>
 
     <!-- Review Results CTA -->
-    <div style="margin-bottom:32px;text-align:center">
-      <a href="${calendlyUrl}" style="display:inline-block;background:#2d3238;color:#ffffff;font-size:14px;font-weight:600;padding:14px 32px;border-radius:4px;text-decoration:none;letter-spacing:0.02em">Review Results</a>
+    <div style="margin-bottom:32px">
+      <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#2d3238">Review Results</p>
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.75;color:#444444">Book a free 30-minute review with Chenge at Forc Advisory. We will walk through your assessment, identify your key exposure areas, and talk through what good looks like at your stage of growth.</p>
+      <p style="margin:0"><a href="${calendlyUrl}" style="color:#2d3238;font-size:14px;font-weight:600;text-decoration:underline">${calendlyUrl}</a></p>
     </div>
 
     <!-- Findings brief -->
@@ -268,10 +270,16 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
     y += 20;
 
     // --- Review Results CTA ---
-    needsPage(52);
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK)
+    const ctaBody = 'Book a free 30-minute review with Chenge at Forc Advisory. We will walk through your assessment, identify your key exposure areas, and talk through what good looks like at your stage of growth.';
+    doc.font('Helvetica').fontSize(11).fillColor(MID);
+    const ctaH = measureH(ctaBody, 11);
+    needsPage(ctaH + 56);
+    doc.font('Helvetica-Bold').fontSize(12).fillColor(DARK)
       .text('Review Results', M, y, { width: USABLE });
-    y += 18;
+    y += 20;
+    doc.font('Helvetica').fontSize(11).fillColor(MID)
+      .text(ctaBody, M, y, { width: USABLE, lineGap: 3 });
+    y += ctaH + 12;
     doc.font('Helvetica').fontSize(10).fillColor(DARK)
       .text(calendlyUrl, M, y, { width: USABLE, underline: true });
     y += 32;
