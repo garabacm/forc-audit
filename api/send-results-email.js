@@ -109,9 +109,7 @@ function buildEmailHTML({ firstName, tierNumber, tierName, tierDescription, expo
 
     <!-- Maturity block -->
     <div style="background:#2d3238;border-radius:6px;padding:24px 28px;margin-bottom:32px">
-      <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase">Maturity Assessment</p>
-      <p style="margin:0 0 12px;font-size:20px;font-weight:700;color:#ffffff">${tierName}</p>
-      <p style="margin:0 0 16px;font-size:14px;line-height:1.65;color:rgba(255,255,255,0.75)">${tierDescription}</p>
+      <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase">Assessment Summary</p>
       <p style="margin:0 0 10px;font-size:13px;color:rgba(255,255,255,0.55)">Indicative exposure: <span style="color:#ffffff;font-weight:600">${exposure} of total technology spend</span></p>
       ${illustrative ? `<p style="margin:0;font-size:12px;color:rgba(255,255,255,0.4);line-height:1.6">${illustrative}</p>` : ''}
     </div>
@@ -125,19 +123,16 @@ function buildEmailHTML({ firstName, tierNumber, tierName, tierDescription, expo
       </table>
     </div>
 
+    <!-- Review Results CTA -->
+    <div style="margin-bottom:32px;text-align:center">
+      <a href="${calendlyUrl}" style="display:inline-block;background:#2d3238;color:#ffffff;font-size:14px;font-weight:600;padding:14px 32px;border-radius:4px;text-decoration:none;letter-spacing:0.02em">Review Results</a>
+    </div>
+
     <!-- Findings brief -->
     <div style="margin-bottom:32px">
       <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:#999999;letter-spacing:0.1em;text-transform:uppercase">Findings Brief</p>
       <div style="border-top:1px solid #eeeeee;margin-top:8px;margin-bottom:16px"></div>
       ${findingsFormatted}
-    </div>
-
-    <!-- Next steps -->
-    <div style="margin-bottom:32px">
-      <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:#999999;letter-spacing:0.1em;text-transform:uppercase">Next Steps</p>
-      <div style="border-top:1px solid #eeeeee;margin-top:8px;margin-bottom:16px"></div>
-      <p style="margin:0 0 14px;font-size:14px;line-height:1.75;color:#444444">Book a free 30-minute review with Chenge at Forc Advisory. We will walk through your assessment, identify your key exposure areas, and talk through what good looks like at your stage of growth.</p>
-      <p style="margin:0"><a href="${calendlyUrl}" style="color:#2d3238;font-size:14px;font-weight:600;text-decoration:underline">${calendlyUrl}</a></p>
     </div>
 
     <!-- Sign off -->
@@ -191,7 +186,6 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
         .text('Forc Advisory  |  Confidential  |  forcadvisory.com', M, fy + 10, { align: 'center', width: USABLE });
     }
 
-    // Draw header and footer on first page
     drawHeader();
     drawFooter();
 
@@ -208,56 +202,54 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
       return false;
     }
 
-    // --- Title block ---
-    doc.font('Helvetica-Bold').fontSize(22).fillColor(DARK)
-      .text('The Tech Cost Maturity Assessment', M, y, { width: USABLE });
-    y += 32;
-    doc.font('Helvetica').fontSize(14).fillColor('#666666')
-      .text(firstName, M, y, { width: USABLE });
-    y += 20;
-    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.font('Helvetica').fontSize(11).fillColor(LIGHT)
-      .text(dateStr, M, y, { width: USABLE });
-    y += 36;
+    // Measure text height — always set font/size on doc first before calling
+    function measureH(text, fontSize, opts = {}) {
+      return doc.heightOfString(text, { width: USABLE, lineGap: 3, ...opts, fontSize });
+    }
 
-    // --- Section rule helper ---
+    // --- Title block ---
+    needsPage(80);
+    doc.font('Helvetica-Bold').fontSize(22).fillColor(DARK);
+    const titleH = measureH('The Tech Cost Maturity Assessment', 22);
+    doc.text('The Tech Cost Maturity Assessment', M, y, { width: USABLE });
+    y += titleH + 12;
+
+    doc.font('Helvetica').fontSize(14).fillColor('#666666');
+    doc.text(firstName, M, y, { width: USABLE });
+    y += 22;
+
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    doc.font('Helvetica').fontSize(11).fillColor(LIGHT);
+    doc.text(dateStr, M, y, { width: USABLE });
+    y += 40;
+
+    // --- Section heading helper ---
     function sectionHeading(label) {
-      needsPage(30);
+      needsPage(34);
       doc.font('Helvetica-Bold').fontSize(9).fillColor(LIGHT)
         .text(label.toUpperCase(), M, y, { characterSpacing: 0.8, width: USABLE });
       y += 14;
       doc.moveTo(M, y).lineTo(M + USABLE, y).strokeColor(RULE).lineWidth(0.5).stroke();
-      y += 14;
+      y += 16;
     }
 
-    // --- Maturity Assessment ---
-    sectionHeading('Maturity Assessment');
+    // --- Assessment Summary (exposure + illustrative — no tier name/description) ---
+    sectionHeading('Assessment Summary');
 
-    needsPage(80);
-    doc.font('Helvetica-Bold').fontSize(18).fillColor(DARK)
-      .text(tierName, M, y, { width: USABLE });
-    y += 26;
-
-    const descLines = doc.heightOfString(tierDescription || '', { font: 'Helvetica', fontSize: 11, width: USABLE });
-    needsPage(descLines + 10);
-    doc.font('Helvetica').fontSize(11).fillColor(MID)
-      .text(tierDescription || '', M, y, { width: USABLE, lineGap: 3 });
-    y += descLines + 14;
-
-    needsPage(20);
-    doc.font('Helvetica').fontSize(11).fillColor(DARK)
-      .text('Indicative exposure: ', M, y, { continued: true, width: USABLE })
-      .font('Helvetica-Bold').text(`${exposure} of total technology spend`, { continued: false });
-    y += 18;
+    needsPage(28);
+    doc.font('Helvetica').fontSize(11).fillColor(DARK);
+    doc.text('Indicative exposure: ', M, y, { continued: true, width: USABLE });
+    doc.font('Helvetica-Bold').fontSize(11).text(`${exposure} of total technology spend`, { continued: false });
+    y += 22;
 
     if (illustrative) {
-      const illusH = doc.heightOfString(illustrative, { font: 'Helvetica', fontSize: 10, width: USABLE });
-      needsPage(illusH + 10);
-      doc.font('Helvetica').fontSize(10).fillColor('#888888')
-        .text(illustrative, M, y, { width: USABLE, lineGap: 2 });
-      y += illusH + 18;
+      doc.font('Helvetica').fontSize(10).fillColor('#888888');
+      const illusH = measureH(illustrative, 10, { lineGap: 2 });
+      needsPage(illusH + 12);
+      doc.text(illustrative, M, y, { width: USABLE, lineGap: 2 });
+      y += illusH + 28;
     } else {
-      y += 14;
+      y += 16;
     }
 
     // --- Category Scores ---
@@ -265,43 +257,36 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
 
     const catEntries = Object.entries(categoryScores || {});
     for (const [cat, score] of catEntries) {
-      needsPage(26);
-      doc.font('Helvetica').fontSize(11).fillColor(DARK)
+      needsPage(32);
+      doc.font('Helvetica').fontSize(11).fillColor(MID)
         .text(cat, M, y, { width: USABLE * 0.7, lineBreak: false });
       doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK)
         .text(`${score} / 6`, M, y, { align: 'right', width: USABLE, lineBreak: false });
-      y += 18;
-      doc.moveTo(M, y).lineTo(M + USABLE, y).strokeColor('#eeeeee').lineWidth(0.4).stroke();
-      y += 8;
+      y += 22;
+      doc.moveTo(M, y - 4).lineTo(M + USABLE, y - 4).strokeColor('#eeeeee').lineWidth(0.4).stroke();
     }
-    y += 14;
+    y += 20;
+
+    // --- Review Results CTA ---
+    needsPage(52);
+    doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK)
+      .text('Review Results', M, y, { width: USABLE });
+    y += 18;
+    doc.font('Helvetica').fontSize(10).fillColor(DARK)
+      .text(calendlyUrl, M, y, { width: USABLE, underline: true });
+    y += 32;
 
     // --- Findings Brief ---
     sectionHeading('Findings Brief');
 
     const paragraphs = (findingsBrief || '').split('\n').filter(l => l.trim());
     for (const para of paragraphs) {
-      const h = doc.heightOfString(para, { font: 'Helvetica', fontSize: 11, width: USABLE });
-      needsPage(h + 14);
-      doc.font('Helvetica').fontSize(11).fillColor(MID)
-        .text(para, M, y, { width: USABLE, lineGap: 3 });
-      y += h + 14;
+      doc.font('Helvetica').fontSize(11).fillColor(MID);
+      const h = measureH(para, 11);
+      needsPage(h + 18);
+      doc.text(para, M, y, { width: USABLE, lineGap: 3 });
+      y += h + 18;
     }
-    y += 6;
-
-    // --- Next Steps ---
-    sectionHeading('Next Steps');
-
-    const nextText = 'Book a free 30-minute review with Chenge at Forc Advisory. We will walk through your assessment, identify your key exposure areas, and talk through what good looks like at your stage of growth.';
-    const nextH = doc.heightOfString(nextText, { font: 'Helvetica', fontSize: 11, width: USABLE });
-    needsPage(nextH + 30);
-    doc.font('Helvetica').fontSize(11).fillColor(MID)
-      .text(nextText, M, y, { width: USABLE, lineGap: 3 });
-    y += nextH + 12;
-
-    needsPage(20);
-    doc.font('Helvetica').fontSize(10).fillColor(DARK)
-      .text(calendlyUrl, M, y, { width: USABLE, underline: true });
 
     doc.end();
   });
