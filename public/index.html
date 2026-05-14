@@ -1180,129 +1180,191 @@ Rules:
 function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const W = 595;
-  const margin = 50;
-  const usable = W - margin * 2;
-  let y = 50;
-
-  function wrappedText(text, startY, opts) {
-    const { fontSize = 11, fontStyle = 'normal', color = [26, 26, 26], indent = 0 } = opts || {};
-    doc.setFontSize(fontSize);
-    doc.setFont('helvetica', fontStyle);
-    doc.setTextColor(...color);
-    const lines = doc.splitTextToSize(String(text), usable - indent);
-    doc.text(lines, margin + indent, startY);
-    return startY + lines.length * fontSize * 1.4;
-  }
-
-  function hRule(atY) {
-    doc.setDrawColor(210, 210, 210);
-    doc.setLineWidth(0.4);
-    doc.line(margin, atY, W - margin, atY);
-    return atY + 14;
-  }
+  const PAGE_W = 595;
+  const PAGE_H = 841.89;
+  const M = 60;
+  const USABLE = PAGE_W - M * 2;
+  const CONTENT_TOP = M + 36;
+  const CONTENT_BOTTOM = PAGE_H - 70;
+  const calendlyUrl = 'https://calendly.com/chenge-forcadvisory/new-meeting';
 
   const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Top rule
-  y = hRule(y);
+  function drawHeader() {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(45, 50, 56);
+    doc.text('FORC ADVISORY', M, M);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(136, 136, 136);
+    doc.text('The Tech Cost Maturity Assessment', PAGE_W - M, M, { align: 'right' });
+    doc.setDrawColor(224, 224, 224);
+    doc.setLineWidth(0.5);
+    doc.line(M, M + 18, M + USABLE, M + 18);
+  }
 
-  // Brand header
-  y = wrappedText('FORC ADVISORY', y, { fontSize: 8, fontStyle: 'bold', color: [150, 150, 150] });
-  y += 8;
-  y = wrappedText('The Tech Cost Maturity Assessment', y, { fontSize: 19, fontStyle: 'bold' });
-  y += 6;
-  const dateLine = date + (capturedName ? '  ·  ' + capturedName : '');
-  y = wrappedText(dateLine, y, { fontSize: 9, color: [140, 140, 140] });
-  y += 36;
+  function drawFooter() {
+    const fy = PAGE_H - 50;
+    doc.setDrawColor(224, 224, 224);
+    doc.setLineWidth(0.5);
+    doc.line(M, fy, M + USABLE, fy);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(170, 170, 170);
+    doc.text('Forc Advisory  |  Confidential  |  forcadvisory.com', PAGE_W / 2, fy + 10, { align: 'center' });
+  }
 
-  // Score
-  doc.setFontSize(52);
+  drawHeader();
+  drawFooter();
+  let y = CONTENT_TOP;
+
+  function needsPage(spaceNeeded) {
+    if (y + spaceNeeded > CONTENT_BOTTOM) {
+      doc.addPage();
+      drawHeader();
+      drawFooter();
+      y = CONTENT_TOP;
+    }
+  }
+
+  function measureH(text, fontSize, width) {
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(String(text), width || USABLE);
+    return lines.length * fontSize * 1.45;
+  }
+
+  function sectionHeading(label) {
+    needsPage(34);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(153, 153, 153);
+    doc.text(label.toUpperCase(), M, y);
+    y += 14;
+    doc.setDrawColor(224, 224, 224);
+    doc.setLineWidth(0.5);
+    doc.line(M, y, M + USABLE, y);
+    y += 16;
+  }
+
+  // Title block
+  needsPage(80);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(26, 26, 26);
-  doc.text(lastTier.name, margin, y);
-  y += 52 * 1.3;
+  doc.setFontSize(22);
+  doc.setTextColor(45, 50, 56);
+  const titleLines = doc.splitTextToSize('The Tech Cost Maturity Assessment', USABLE);
+  doc.text(titleLines, M, y);
+  y += titleLines.length * 22 * 1.45 + 12;
 
-  const sub = document.getElementById('final-sub').textContent;
-  y = wrappedText(sub, y, { fontSize: 10, color: [100, 100, 100] });
-  y += 18;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(14);
+  doc.setTextColor(102, 102, 102);
+  if (capturedName) doc.text(capturedName, M, y);
+  y += 22;
 
-  // Dimension summary
-  y = hRule(y);
-  y = wrappedText('Category Scores', y, { fontSize: 11, fontStyle: 'bold' });
-  y += 10;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(153, 153, 153);
+  doc.text(date, M, y);
+  y += 40;
 
+  // Assessment Summary
+  sectionHeading('Assessment Summary');
+  needsPage(36);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(45, 50, 56);
+  const summaryText = 'Your Technology Cost Maturity: ' + lastTier.name;
+  const summaryLines = doc.splitTextToSize(summaryText, USABLE);
+  doc.text(summaryLines, M, y);
+  y += summaryLines.length * 16 * 1.45 + 12;
+
+  needsPage(28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(45, 50, 56);
+  const exposureLabel = 'Indicative exposure: ';
+  const exposureValue = (lastTier.exposure || '') + ' of total technology spend';
+  const labelW = doc.getTextWidth(exposureLabel);
+  doc.text(exposureLabel, M, y);
+  doc.setFont('helvetica', 'bold');
+  doc.text(exposureValue, M + labelW, y);
+  y += 22;
+
+  if (lastTier.illustrative) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(136, 136, 136);
+    const illusLines = doc.splitTextToSize(lastTier.illustrative, USABLE);
+    const illusH = illusLines.length * 10 * 1.45;
+    needsPage(illusH + 12);
+    doc.text(illusLines, M, y);
+    y += illusH + 28;
+  } else {
+    y += 16;
+  }
+
+  // Category Scores
+  sectionHeading('Category Scores');
   const catOrder = ['visibility', 'governance', 'budget', 'forecasting', 'financial', 'strategic'];
-
-  function pdfRagColor(p) { return p >= 67 ? [74, 222, 128] : p >= 34 ? [250, 204, 21] : [248, 113, 113]; }
-  function pdfRagLabel(p) { return p >= 67 ? 'Strong' : p >= 34 ? 'Developing' : 'Needs attention'; }
-
   for (const key of catOrder) {
     const score = lastCatScores[key];
     if (score === undefined) continue;
     const meta = categoryMeta[key];
-    const catPct = Math.round((score / meta.max) * 100);
-    const risk = pdfRagLabel(catPct);
-
-    doc.setFontSize(10);
+    needsPage(32);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(26, 26, 26);
-    doc.text(meta.name, margin, y);
-
-    doc.setTextColor(100, 100, 100);
-    doc.text(score + '/' + meta.max + '  —  ' + risk, W - margin, y, { align: 'right' });
-    y += 14;
-
-    // Mini progress bar
-    doc.setFillColor(230, 230, 230);
-    doc.rect(margin, y - 4, usable, 3, 'F');
-    doc.setFillColor(...pdfRagColor(catPct));
-    doc.rect(margin, y - 4, usable * (catPct / 100), 3, 'F');
-    y += 12;
+    doc.setFontSize(11);
+    doc.setTextColor(68, 68, 68);
+    doc.text(meta.name, M, y);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(45, 50, 56);
+    doc.text(score + ' / ' + meta.max, PAGE_W - M, y, { align: 'right' });
+    y += 22;
+    doc.setDrawColor(238, 238, 238);
+    doc.setLineWidth(0.4);
+    doc.line(M, y - 4, M + USABLE, y - 4);
   }
+  y += 20;
 
-  y += 8;
-
-  // Diagnostic Summary
-  y = hRule(y);
-  y = wrappedText('Diagnostic Summary', y, { fontSize: 11, fontStyle: 'bold' });
-  y += 10;
-
-  const rawLines = findingsRawText.split('\n');
-  for (const line of rawLines) {
-    const trimmed = line.trim();
-    if (!trimmed) { y += 5; continue; }
-
-    if (y > 770) { doc.addPage(); y = 50; }
-
-    if (trimmed.startsWith('- ')) {
-      const bulletText = trimmed.slice(2);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('→', margin, y);
-      doc.setTextColor(26, 26, 26);
-      const bLines = doc.splitTextToSize(bulletText, usable - 14);
-      doc.text(bLines, margin + 14, y);
-      y += bLines.length * 9 * 1.4 + 4;
-    } else {
-      y = wrappedText(trimmed, y, { fontSize: 10 });
-      y += 4;
-    }
-  }
-
-  y += 14;
-
-  // Footer
-  doc.setDrawColor(210, 210, 210);
-  doc.setLineWidth(0.4);
-  doc.line(margin, y, W - margin, y);
-  y += 10;
-  doc.setFontSize(8);
+  // Review Results CTA
+  const ctaBody = 'Book a free 30-minute review with Chenge at Forc Advisory. We will walk through your assessment, identify your key exposure areas, and talk through what good looks like at your stage of growth.';
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(150, 150, 150);
-  doc.text('Forc Advisory  —  forcadvisory.com', margin, y);
-  doc.text(date, W - margin, y, { align: 'right' });
+  doc.setFontSize(11);
+  const ctaLines = doc.splitTextToSize(ctaBody, USABLE);
+  const ctaH = ctaLines.length * 11 * 1.45;
+  needsPage(ctaH + 56);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(45, 50, 56);
+  doc.text('Review Results', M, y);
+  y += 20;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(68, 68, 68);
+  doc.text(ctaLines, M, y);
+  y += ctaH + 12;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(45, 50, 56);
+  doc.text(calendlyUrl, M, y);
+  const urlW = doc.getTextWidth(calendlyUrl);
+  doc.setDrawColor(45, 50, 56);
+  doc.setLineWidth(0.4);
+  doc.line(M, y + 2, M + urlW, y + 2);
+  y += 32;
+
+  // Findings Brief
+  sectionHeading('Findings Brief');
+  const paragraphs = (findingsRawText || '').split('\n').filter(l => l.trim());
+  for (const para of paragraphs) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(68, 68, 68);
+    const paraLines = doc.splitTextToSize(para, USABLE);
+    const h = paraLines.length * 11 * 1.45;
+    needsPage(h + 18);
+    doc.text(paraLines, M, y);
+    y += h + 18;
+  }
 
   const filename = capturedName
     ? 'Forc-Audit-' + capturedName.replace(/\s+/g, '-') + '.pdf'

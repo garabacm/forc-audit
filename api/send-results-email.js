@@ -155,7 +155,7 @@ function buildEmailHTML({ firstName, tierNumber, tierName, tierDescription, expo
 </html>`;
 }
 
-async function buildPDF({ firstName, tierNumber, tierName, tierDescription, exposure, illustrative, categoryScores, findingsBrief }) {
+async function buildPDF({ firstName, tierNumber, tierName, tierDescription, exposure, illustrative, categoryScores, findingsBrief, calendlyUrl }) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ autoFirstPage: true, size: 'A4', margins: { top: 0, bottom: 0, left: 0, right: 0 } });
     const chunks = [];
@@ -165,140 +165,136 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
 
     const PAGE_W = 595.28;
     const PAGE_H = 841.89;
-    const M = 50;
+    const M = 60;
     const USABLE = PAGE_W - M * 2;
-    const DARK = '#1a1a1a';
-    const RULE = '#d2d2d2';
+    const CONTENT_TOP = M + 36;
+    const CONTENT_BOTTOM = PAGE_H - 70;
+    const DARK = '#2d3238';
+    const MID = '#444444';
+    const LIGHT = '#999999';
+    const RULE = '#e0e0e0';
 
-    const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    let y = 50;
-
-    function hRule(atY) {
-      doc.moveTo(M, atY).lineTo(M + USABLE, atY).strokeColor(RULE).lineWidth(0.4).stroke();
-      return atY + 14;
+    function drawHeader() {
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(DARK)
+        .text('FORC ADVISORY', M, M, { align: 'left', continued: false, lineBreak: false });
+      doc.font('Helvetica').fontSize(9).fillColor('#888888')
+        .text('The Tech Cost Maturity Assessment', M, M, { align: 'right', width: USABLE, lineBreak: false });
+      doc.moveTo(M, M + 18).lineTo(M + USABLE, M + 18).strokeColor(RULE).lineWidth(0.5).stroke();
     }
 
-    function checkPage(spaceNeeded) {
-      if (y + spaceNeeded > PAGE_H - 80) {
+    function drawFooter() {
+      const fy = PAGE_H - 50;
+      doc.moveTo(M, fy).lineTo(M + USABLE, fy).strokeColor(RULE).lineWidth(0.5).stroke();
+      doc.font('Helvetica').fontSize(9).fillColor('#aaaaaa')
+        .text('Forc Advisory  |  Confidential  |  forcadvisory.com', M, fy + 10, { align: 'center', width: USABLE });
+    }
+
+    drawHeader();
+    drawFooter();
+    let y = CONTENT_TOP;
+
+    function needsPage(spaceNeeded) {
+      if (y + spaceNeeded > CONTENT_BOTTOM) {
         doc.addPage();
-        y = 50;
+        drawHeader();
+        drawFooter();
+        y = CONTENT_TOP;
+        return true;
       }
+      return false;
     }
 
-    function textH(text, fontSize, width, lineGap) {
-      doc.fontSize(fontSize);
-      return doc.heightOfString(String(text), { width: width || USABLE, lineGap: lineGap || 2 });
+    function measureH(text, fontSize, opts = {}) {
+      return doc.heightOfString(text, { width: USABLE, lineGap: 3, ...opts, fontSize });
     }
 
-    function ragColor(pct) {
-      if (pct >= 67) return '#4ade80';
-      if (pct >= 34) return '#facc15';
-      return '#f87171';
-    }
-    function ragLabel(pct) {
-      if (pct >= 67) return 'Strong';
-      if (pct >= 34) return 'Developing';
-      return 'Needs attention';
-    }
-
-    // === Top rule ===
-    y = hRule(y);
-
-    // === Brand header ===
-    doc.font('Helvetica-Bold').fontSize(8).fillColor('#969696');
-    doc.text('FORC ADVISORY', M, y, { width: USABLE });
-    y += 13;
-
-    doc.font('Helvetica-Bold').fontSize(19).fillColor(DARK);
-    const titleH = textH('The Tech Cost Maturity Assessment', 19);
+    // Title block
+    needsPage(80);
+    doc.font('Helvetica-Bold').fontSize(22).fillColor(DARK);
+    const titleH = measureH('The Tech Cost Maturity Assessment', 22);
     doc.text('The Tech Cost Maturity Assessment', M, y, { width: USABLE });
-    y += titleH + 6;
+    y += titleH + 12;
 
-    const dateLine = date + (firstName ? '  \u00B7  ' + firstName : '');
-    doc.font('Helvetica').fontSize(9).fillColor('#8c8c8c');
-    doc.text(dateLine, M, y, { width: USABLE });
-    y += 36;
+    doc.font('Helvetica').fontSize(14).fillColor('#666666');
+    doc.text(firstName, M, y, { width: USABLE });
+    y += 22;
 
-    // === Tier name (large) ===
-    checkPage(90);
-    doc.font('Helvetica-Bold').fontSize(48).fillColor(DARK);
-    const tierNameH = textH(tierName, 48);
-    doc.text(tierName, M, y, { width: USABLE });
-    y += tierNameH + 10;
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    doc.font('Helvetica').fontSize(11).fillColor(LIGHT);
+    doc.text(dateStr, M, y, { width: USABLE });
+    y += 40;
 
-    // === Tier description ===
-    if (tierDescription) {
-      checkPage(40);
-      doc.font('Helvetica').fontSize(10).fillColor('#646464');
-      const descH = textH(tierDescription, 10);
-      doc.text(tierDescription, M, y, { width: USABLE, lineGap: 2 });
-      y += descH + 18;
-    }
-
-    // === Category Scores ===
-    checkPage(60);
-    y = hRule(y);
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK);
-    doc.text('Category Scores', M, y, { width: USABLE });
-    y += 18;
-
-    const CAT_MAX = 6;
-    for (const [cat, score] of Object.entries(categoryScores || {})) {
-      checkPage(34);
-      const pct = Math.round((score / CAT_MAX) * 100);
-
-      doc.font('Helvetica').fontSize(10).fillColor(DARK)
-        .text(cat, M, y, { width: USABLE, lineBreak: false });
-      doc.font('Helvetica').fontSize(10).fillColor('#646464')
-        .text(`${score}/${CAT_MAX}  \u2014  ${ragLabel(pct)}`, M, y, { align: 'right', width: USABLE, lineBreak: false });
+    function sectionHeading(label) {
+      needsPage(34);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(LIGHT)
+        .text(label.toUpperCase(), M, y, { characterSpacing: 0.8, width: USABLE });
       y += 14;
-
-      // Progress bar
-      doc.fillColor('#e6e6e6').rect(M, y - 4, USABLE, 3).fill();
-      if (pct > 0) doc.fillColor(ragColor(pct)).rect(M, y - 4, USABLE * (pct / 100), 3).fill();
-      y += 12;
+      doc.moveTo(M, y).lineTo(M + USABLE, y).strokeColor(RULE).lineWidth(0.5).stroke();
+      y += 16;
     }
 
-    y += 8;
+    // Assessment Summary
+    sectionHeading('Assessment Summary');
+    needsPage(36);
+    doc.font('Helvetica-Bold').fontSize(16).fillColor(DARK)
+      .text(`Your Technology Cost Maturity: ${tierName}`, M, y, { width: USABLE });
+    y += 28;
 
-    // === Diagnostic Summary ===
-    checkPage(50);
-    y = hRule(y);
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK);
-    doc.text('Diagnostic Summary', M, y, { width: USABLE });
-    y += 18;
+    needsPage(28);
+    doc.font('Helvetica').fontSize(11).fillColor(DARK);
+    doc.text('Indicative exposure: ', M, y, { continued: true, width: USABLE });
+    doc.font('Helvetica-Bold').fontSize(11).text(`${exposure} of total technology spend`, { continued: false });
+    y += 22;
 
-    const rawLines = (findingsBrief || '').split('\n');
-    for (const line of rawLines) {
-      const trimmed = line.trim();
-      if (!trimmed) { y += 5; continue; }
-
-      if (trimmed.startsWith('- ')) {
-        const bulletText = trimmed.slice(2);
-        checkPage(30);
-        doc.font('Helvetica').fontSize(9).fillColor('#646464')
-          .text('\u2192', M, y, { lineBreak: false });
-        doc.font('Helvetica').fontSize(9).fillColor(DARK)
-          .text(bulletText, M + 14, y, { width: USABLE - 14, lineGap: 2 });
-        const bH = textH(bulletText, 9, USABLE - 14, 2);
-        y += bH + 4;
-      } else {
-        checkPage(30);
-        doc.font('Helvetica').fontSize(10).fillColor(DARK);
-        const h = textH(trimmed, 10);
-        doc.text(trimmed, M, y, { width: USABLE, lineGap: 3 });
-        y += h + 4;
-      }
+    if (illustrative) {
+      doc.font('Helvetica').fontSize(10).fillColor('#888888');
+      const illusH = measureH(illustrative, 10, { lineGap: 2 });
+      needsPage(illusH + 12);
+      doc.text(illustrative, M, y, { width: USABLE, lineGap: 2 });
+      y += illusH + 28;
+    } else {
+      y += 16;
     }
 
-    y += 14;
+    // Category Scores
+    sectionHeading('Category Scores');
+    const catEntries = Object.entries(categoryScores || {});
+    for (const [cat, score] of catEntries) {
+      needsPage(32);
+      doc.font('Helvetica').fontSize(11).fillColor(MID)
+        .text(cat, M, y, { width: USABLE * 0.7, lineBreak: false });
+      doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK)
+        .text(`${score} / 6`, M, y, { align: 'right', width: USABLE, lineBreak: false });
+      y += 22;
+      doc.moveTo(M, y - 4).lineTo(M + USABLE, y - 4).strokeColor('#eeeeee').lineWidth(0.4).stroke();
+    }
+    y += 20;
 
-    // === Footer ===
-    doc.moveTo(M, y).lineTo(M + USABLE, y).strokeColor(RULE).lineWidth(0.4).stroke();
-    y += 10;
-    doc.font('Helvetica').fontSize(8).fillColor('#969696');
-    doc.text('Forc Advisory  \u2014  forcadvisory.com', M, y, { width: USABLE / 2 });
-    doc.text(date, M, y, { align: 'right', width: USABLE });
+    // Review Results CTA
+    const ctaBody = 'Book a free 30-minute review with Chenge at Forc Advisory. We will walk through your assessment, identify your key exposure areas, and talk through what good looks like at your stage of growth.';
+    doc.font('Helvetica').fontSize(11).fillColor(MID);
+    const ctaH = measureH(ctaBody, 11);
+    needsPage(ctaH + 56);
+    doc.font('Helvetica-Bold').fontSize(12).fillColor(DARK)
+      .text('Review Results', M, y, { width: USABLE });
+    y += 20;
+    doc.font('Helvetica').fontSize(11).fillColor(MID)
+      .text(ctaBody, M, y, { width: USABLE, lineGap: 3 });
+    y += ctaH + 12;
+    doc.font('Helvetica').fontSize(10).fillColor(DARK)
+      .text(calendlyUrl, M, y, { width: USABLE, underline: true });
+    y += 32;
+
+    // Findings Brief
+    sectionHeading('Findings Brief');
+    const paragraphs = (findingsBrief || '').split('\n').filter(l => l.trim());
+    for (const para of paragraphs) {
+      doc.font('Helvetica').fontSize(11).fillColor(MID);
+      const h = measureH(para, 11);
+      needsPage(h + 18);
+      doc.text(para, M, y, { width: USABLE, lineGap: 3 });
+      y += h + 18;
+    }
 
     doc.end();
   });
