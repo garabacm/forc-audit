@@ -942,6 +942,7 @@ let capturedName = '';
 let capturedEmail = '';
 let lastCatScores = {};
 let lastTier = null;
+let lastTotalScore = 0;
 let findingsRawText = '';
 
 const BLOCKED_DOMAINS = ['gmail.com', 'hotmail.com', 'yahoo.com', 'yahoo.co.uk', 'outlook.com', 'outlook.co.uk', 'icloud.com', 'hotmail.co.uk', 'live.com', 'msn.com'];
@@ -1101,6 +1102,7 @@ function showResults() {
   });
 
   const totalScore = Object.values(catScores).reduce((a, b) => a + b, 0);
+  lastTotalScore = totalScore;
   const tier = getTier(totalScore);
   lastTier = tier;
 
@@ -1181,7 +1183,8 @@ Guidelines:
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${response.status}`);
+      const rawDetail = errData.detail ? String(errData.detail).slice(0, 200) : '';
+      throw new Error((errData.error || `HTTP ${response.status}`) + (rawDetail ? ` — ${rawDetail}` : ''));
     }
 
     const data = await response.json();
@@ -1235,7 +1238,7 @@ Guidelines:
 
   } catch(err) {
     console.error('generateFindings error:', err.message);
-    findingsEl.innerHTML = `<p style="color:rgba(255,255,255,0.5);font-style:italic">Could not generate findings (${err.message}). Please try again.</p>`;
+    findingsEl.innerHTML = `<p style="color:rgba(255,255,255,0.5);font-style:italic;font-size:13px">Could not generate findings: ${err.message}</p><p style="margin-top:14px"><button onclick="generateFindings(lastCatScores,lastTier,lastTotalScore)" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.18);padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">↻ Try again</button></p>`;
   }
 }
 
