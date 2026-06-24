@@ -870,12 +870,38 @@
 const API_URL = 'https://forc-audit.vercel.app/api/generate';
 
 const QUESTION_INSIGHTS = {
-  1: "Companies at this stage typically find 20 to 30% of their tech budget is untracked, duplicated, or forgotten. Your full report shows exactly where that spend is sitting.",
-  2: "The fastest recovery opportunity in most tech budgets is sitting in the SaaS licence stack. Your report identifies which part of yours to look at first.",
-  3: "There are likely P&L improvements available right now that require no cost reduction, just a change in how your development spend is classified. Your report shows the size of the opportunity.",
-  4: "Cloud and AI spend without team-level accountability tends to compound quietly year-on-year with no single owner. Your report shows what a cost accountability structure looks like at your stage.",
-  5: "The most expensive tech decisions your business makes are currently being made without finance in the room. Your full report identifies where that disconnect is creating the most risk.",
-  6: "Right now, a board question on tech cost efficiency would take weeks to answer credibly. Your report shows the changes that would put you in control of that conversation."
+  'controlled': {
+    1: "Strong visibility across your tech stack. The opportunity now is using that data to drive sharper optimisation and strategic decisions.",
+    2: "Licence hygiene is well maintained. The focus shifts to ensuring that discipline holds as the vendor estate grows.",
+    3: "Financial governance is in place and consistently applied. The priority now is ensuring it scales with new investment decisions.",
+    4: "Cloud and AI spend is well governed at team level. The opportunity is deepening that accountability as AI adoption accelerates.",
+    5: "Finance and engineering are aligned on costs. The next step is using that partnership to drive proactive investment tradeoffs.",
+    6: "Strong controls and visibility across your technology spend. Focus now shifts to optimisation and strategic alignment."
+  },
+  'developing': {
+    1: "Visibility exists but gaps remain in vendor-level budget tracking. Closing them creates a cleaner foundation for the decisions above it.",
+    2: "Licence reviews are happening but the 30-day threshold isn't consistently met. Tightening the process will recover spend that is currently slipping through.",
+    3: "Development spend is partially capitalised but inconsistently applied. A documented policy applied consistently would improve both the P&L and compliance position.",
+    4: "Cloud and AI spend has team-level allocation but variance analysis is missing. Adding it will surface the cost patterns before they compound.",
+    5: "Finance and engineering meet regularly but actions aren't formally tracked. Closing that loop is the step that turns meetings into recoverable outcomes.",
+    6: "You can respond to a board question on cost efficiency but it would take a few days. The goal is making that response immediate and data-led."
+  },
+  'exposed': {
+    1: "There is no single reliable view of your tech spend. That gap is where the largest recoverable costs are currently sitting.",
+    2: "Licences are reviewed occasionally but with no structured process. The spend that is slipping through is likely material.",
+    3: "Development costs are being fully expensed when a portion may qualify for capitalisation. The P&L impact of that is likely visible.",
+    4: "Cloud and AI spend is visible at the total level only. Without team-level allocation, cost ownership is unclear and accountability is missing.",
+    5: "Finance and engineering have no structured cost dialogue. The most expensive tech decisions are being made without financial oversight.",
+    6: "A credible response to a board question on cost efficiency would take weeks to produce. That gap creates significant exposure at the leadership level."
+  },
+  'at-risk': {
+    1: "There is no register of your tech spend. That means no visibility into what is contracted, what is active, and what is being wasted.",
+    2: "There is no active process to identify or remove unused licences. The spend sitting unreviewed will continue to compound.",
+    3: "All development spend is expensed. The capitalisation opportunity that could materially improve your P&L is currently being ignored.",
+    4: "Cloud and AI spend is untracked beyond a total bill. There is no ownership, no allocation, and no mechanism to control it.",
+    5: "There is no regular interaction between finance and engineering on costs. The most expensive decisions in your business are being made without financial input.",
+    6: "Your business cannot currently respond to a board question on cost efficiency. That is a governance exposure as much as a financial one."
+  }
 };
 
 const questions = [
@@ -1017,7 +1043,8 @@ function showScore() {
   const benchEl = document.getElementById('score-bench-text');
   benchEl.textContent = tier.benchmark;
   benchEl.style.borderLeftColor = color;
-  document.getElementById('score-insight-text').textContent = QUESTION_INSIGHTS[weakestQId] || '';
+  const insightMap = QUESTION_INSIGHTS[tier.key] || QUESTION_INSIGHTS['at-risk'];
+  document.getElementById('score-insight-text').textContent = insightMap[weakestQId] || '';
 
   document.getElementById('screen-question').classList.add('hidden');
   document.getElementById('screen-score').classList.remove('hidden');
