@@ -1155,31 +1155,37 @@ Guidelines:
     findingsEl.innerHTML = '<span id="findings-text"></span><span class="cursor"></span>';
     const textEl = document.getElementById('findings-text');
     let fullText = '';
+    let streamError = null;
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let buffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete last line
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
           try {
             const parsed = JSON.parse(data);
+            if (parsed.type === 'forc_error') {
+              streamError = parsed.message;
+              break;
+            }
             if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
               fullText += parsed.delta.text;
               const blocks = fullText.split('\n\n').filter(b => b.trim());
               textEl.innerHTML = blocks.map(block => {
-                const lines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
-                const hasBullets = lines.some(l => l.startsWith('- '));
-                if (!hasBullets) return `<p>${lines.join(' ')}</p>`;
+                const blines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
+                const hasBullets = blines.some(l => l.startsWith('- '));
+                if (!hasBullets) return `<p>${blines.join(' ')}</p>`;
                 const parts = [];
                 let bullets = [];
-                lines.forEach(l => {
+                blines.forEach(l => {
                   if (l.startsWith('- ')) {
                     bullets.push(`<li>${l.slice(2)}</li>`);
                   } else {
@@ -1197,6 +1203,11 @@ Guidelines:
     }
 
     document.querySelector('.cursor')?.remove();
+
+    if (streamError || !fullText.trim()) {
+      findingsEl.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-style:italic">Unable to generate findings. Please try again or contact Forc Advisory directly.</p>';
+    }
+
     findingsRawText = fullText;
     document.getElementById('pdf-btn-wrap').style.display = 'block';
 

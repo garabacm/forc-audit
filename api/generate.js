@@ -1,17 +1,17 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  const { prompt } = req.body;
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Missing prompt' });
-  }
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -22,16 +22,20 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1024,
         stream: true,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Anthropic API error:', response.status, errText);
+      res.write(`data: {"type":"forc_error","message":"API error ${response.status}"}\n\n`);
+      res.end();
+      return;
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -39,12 +43,13 @@ export default async function handler(req, res) {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value);
-      res.write(chunk);
+      res.write(decoder.decode(value));
     }
 
     res.end();
   } catch (err) {
-    res.status(500).json({ error: 'API error', detail: err.message });
+    console.error('generate handler error:', err.message);
+    res.write(`data: {"type":"forc_error","message":"${err.message}"}\n\n`);
+    res.end();
   }
 }
