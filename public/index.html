@@ -719,6 +719,21 @@
     left: 0;
     color: var(--text-dim);
   }
+
+  /* ── Score screen ─────────────────────────────── */
+  .score-tier-label  { font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; font-weight:600; }
+  .score-tier-name   { font-size:clamp(32px,6vw,48px); font-weight:700; letter-spacing:-0.02em; line-height:1.1; margin-bottom:20px; }
+  .score-ind-wrap    { margin-bottom:20px; }
+  .score-ind-bar     { height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; margin-bottom:8px; }
+  .score-ind-fill    { height:100%; border-radius:4px; transition:width 0.8s ease; }
+  .score-ind-text    { font-size:13px; color:var(--text-dim); font-weight:500; }
+  .score-waste-text  { font-size:15px; font-weight:600; color:var(--text-main); margin-bottom:10px; }
+  .score-bench-text  { font-size:13px; color:var(--text-dim); line-height:1.6; margin-bottom:20px; }
+  .score-insight-box { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px 16px; margin-bottom:28px; }
+  .score-insight-box .insight-label { font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); display:block; margin-bottom:6px; font-weight:600; }
+  .score-insight-box .insight-body  { font-size:13px; line-height:1.6; color:var(--text-main); }
+  .gate-divider      { border:none; border-top:1px solid rgba(255,255,255,0.1); margin:28px 0; }
+  .gate-confirm-msg  { text-align:center; font-size:16px; color:var(--text-main); line-height:1.7; padding:28px 0; font-weight:500; }
 </style>
 </head>
 <body>
@@ -728,7 +743,7 @@
   <div id="screen-intro">
     <div class="header">
       <h1>How mature is your tech financial operating model?</h1>
-      <p>3 minutes. 12 questions. A scored breakdown across:</p>
+      <p>60 seconds. 6 questions. A scored breakdown across:</p>
       <ul class="intro-list">
         <li>Visibility</li>
         <li>Governance</li>
@@ -741,7 +756,7 @@
     </div>
     <div class="meta-row">
       <div class="meta-item"><span>●</span> 6 categories assessed</div>
-      <div class="meta-item"><span>●</span> Takes 3–4 minutes</div>
+      <div class="meta-item"><span>●</span> Under 60 seconds</div>
       <div class="meta-item"><span>●</span> Summarised findings brief</div>
     </div>
     <button class="btn-start" onclick="startAudit()">Start the audit →</button>
@@ -770,24 +785,42 @@
     </div>
   </div>
 
-  <!-- GATE -->
-  <div id="screen-gate" class="hidden">
+  <!-- SCORE -->
+  <div id="screen-score" class="hidden">
     <div class="gate-wrap">
       <div class="gate-card">
-        <div class="brand" style="margin-bottom:32px"><span class="brand-dot"></span> Forc Advisory</div>
-        <h2 class="gate-headline">Your results are ready</h2>
-        <p class="gate-subline">Enter your details below to see your score and personalised findings brief</p>
-        <div class="gate-form">
-          <div class="field-group">
-            <input type="text" id="gate-name" class="gate-input" placeholder="First name" autocomplete="given-name">
-            <div class="field-error hidden" id="error-name">Please enter your first name</div>
+        <div class="brand" style="margin-bottom:24px"><span class="brand-dot"></span> Forc Advisory</div>
+        <div class="score-tier-label">Your technology cost maturity</div>
+        <div class="score-tier-name" id="score-tier-name">—</div>
+        <div class="score-ind-wrap">
+          <div class="score-ind-bar"><div class="score-ind-fill" id="score-indicator-fill" style="width:0%"></div></div>
+          <div class="score-ind-text" id="score-indicator-text"></div>
+        </div>
+        <div class="score-waste-text" id="score-waste-text"></div>
+        <div class="score-bench-text" id="score-bench-text"></div>
+        <div class="score-insight-box">
+          <span class="insight-label">Key finding</span>
+          <span class="insight-body" id="score-insight-text"></span>
+        </div>
+        <div id="score-gate-form">
+          <hr class="gate-divider">
+          <h2 class="gate-headline">Want to know exactly where to start?</h2>
+          <p class="gate-subline">Get your personalised findings report with actionable next steps you can implement yourself. Sent straight to your inbox.</p>
+          <div class="gate-form">
+            <div class="field-group">
+              <input type="text" id="gate-name" class="gate-input" placeholder="First name" autocomplete="given-name">
+              <div class="field-error hidden" id="error-name">Please enter your first name</div>
+            </div>
+            <div class="field-group">
+              <input type="email" id="gate-email" class="gate-input" placeholder="Work email" autocomplete="email">
+              <div class="field-error hidden" id="error-email">Please enter your work email</div>
+            </div>
+            <button class="btn-gate" onclick="submitGate()">Send My Report →</button>
+            <p class="gate-disclaimer">✓ No spam. One email with your personalised findings report.</p>
           </div>
-          <div class="field-group">
-            <input type="email" id="gate-email" class="gate-input" placeholder="Work email" autocomplete="email">
-            <div class="field-error hidden" id="error-email">Please enter your work email</div>
-          </div>
-          <button class="btn-gate" onclick="submitGate()">See my results →</button>
-          <p class="gate-disclaimer">✓ No spam. One follow-up email with your findings summary.</p>
+        </div>
+        <div id="score-gate-confirmation" class="hidden">
+          <p class="gate-confirm-msg">Your personalised report is on its way. Check your inbox.</p>
         </div>
       </div>
     </div>
@@ -836,43 +869,45 @@
 // Example: https://forc-audit.vercel.app/api/generate
 const API_URL = 'https://forc-audit.vercel.app/api/generate';
 
+const QUESTION_INSIGHTS = {
+  1: "You lack foundational visibility into your tech cost base.",
+  2: "You are paying for licences nobody is using.",
+  3: "You are likely missing capitalisation opportunities that would improve your P&L.",
+  4: "Your cloud and AI spend has no cost accountability structure.",
+  5: "Finance and engineering are operating in silos on cost decisions.",
+  6: "You would not be able to respond credibly to board pressure on tech costs."
+};
+
 const questions = [
-  { id:1, category:"Visibility", categoryKey:"visibility", text:"When did you last have a single, consolidated view of your total technology cost base?", options:[{text:"We have a live view updated at least monthly",score:3},{text:"We pull this together quarterly, usually for board packs",score:2},{text:"We have done it once or twice but it is not a regular process",score:1},{text:"We have never had a single consolidated view",score:0}]},
-  { id:2, category:"Visibility", categoryKey:"visibility", text:"Do you know your top 10 technology vendors by spend, and the actual utilisation of each?", options:[{text:"Yes, we track both spend and utilisation regularly",score:3},{text:"We know the spend but do not systematically track utilisation",score:2},{text:"We have a rough idea but nothing we would rely on for decisions",score:1},{text:"No, this has never been mapped",score:0}]},
-  { id:3, category:"Governance", categoryKey:"governance", text:"Who owns the relationship between finance and your engineering or product teams when technology cost decisions are being made?", options:[{text:"A dedicated finance partner embedded in or aligned to tech",score:3},{text:"The CFO and CTO manage it with regular touchpoints",score:2},{text:"It is informal, finance gets involved when there is a budget problem",score:1},{text:"There is no structured relationship, they operate independently",score:0}]},
-  { id:4, category:"Governance", categoryKey:"governance", text:"When your technical teams evaluate a new vendor or platform, at what point does finance get involved?", options:[{text:"Before any decision, finance is part of the evaluation process",score:3},{text:"During commercial negotiation once a preferred vendor is chosen",score:2},{text:"After the contract is signed when the invoice arrives",score:1},{text:"Finance is rarely involved in vendor or platform decisions",score:0}]},
-  { id:5, category:"Budget Management", categoryKey:"budget", text:"How granular is your technology budget and how actively is it managed?", options:[{text:"We budget and track at vendor, platform, and team level with monthly reviews",score:3},{text:"We have a top level tech budget but limited granularity below that",score:2},{text:"We have a rough annual budget but it is not actively managed in-year",score:1},{text:"We do not have a formal technology budget",score:0}]},
-  { id:6, category:"Budget Management", categoryKey:"budget", text:"In the last 12 months, has a technology commitment been made that finance only found out about after the fact?", options:[{text:"No, we have full visibility before any commitment is made",score:3},{text:"Once or twice but nothing material",score:2},{text:"Yes, fairly regularly on tools below a certain threshold",score:1},{text:"Yes, including some significant ones",score:0}]},
-  { id:7, category:"Forecasting", categoryKey:"forecasting", text:"How many of your technology contracts renew automatically, and do you have a forward calendar with notice windows mapped?", options:[{text:"Yes, all auto-renewals are mapped with a 90-day advance calendar",score:3},{text:"We track the major ones but the full picture is incomplete",score:2},{text:"Most renew automatically and our tracking is patchy at best",score:1},{text:"We find out when the invoice arrives or the renewal has already processed",score:0}]},
-  { id:8, category:"Forecasting", categoryKey:"forecasting", text:"If your board asked tomorrow for a plan to reduce technology costs by 20% without impacting capability, how prepared would you be?", options:[{text:"Very prepared, we have the data and could present options immediately",score:3},{text:"Fairly prepared, it would take some analysis but we could respond quickly",score:2},{text:"We would need significant time to pull the right information together",score:1},{text:"We would not know where to start",score:0}]},
-  { id:9, category:"Financial Efficiency", categoryKey:"financial", text:"When you last renewed a major technology contract, who led that negotiation and what data did you use?", options:[{text:"Finance led it using usage data, market benchmarks, and commercial terms analysis",score:3},{text:"Procurement or finance were involved with input from the technical team",score:2},{text:"The technical team led it, finance reviewed and approved the final number",score:1},{text:"The vendor effectively led it, we reviewed what they presented and agreed",score:0}]},
-  { id:10, category:"Financial Efficiency", categoryKey:"financial", text:"Has a technology vendor increased their pricing by more than 15% at renewal in the last two years?", options:[{text:"No, our contracts include price protections or CPI-linked caps",score:3},{text:"Yes once, we challenged it and negotiated a better outcome",score:2},{text:"Yes, and we accepted most of the increase because switching felt harder",score:1},{text:"Yes, more than once, and we paid without significant challenge",score:0}]},
-  { id:11, category:"Strategic Alignment", categoryKey:"strategic", text:"Would your board or investors be satisfied with the current level of visibility and reporting on technology spend efficiency and ROI?", options:[{text:"Yes, we report on this regularly and it is a strength of our finance function",score:3},{text:"Probably, though our reporting here could be more structured",score:2},{text:"Unlikely, this is an area we know needs work",score:1},{text:"No, we do not currently report on technology spend efficiency at board level",score:0}]},
-  { id:12, category:"Strategic Alignment", categoryKey:"strategic", text:"Is there a senior finance professional in your business who understands the technical and commercial dimensions of your stack, who your CTO trusts and your CFO relies on?", options:[{text:"Yes, we have that person and they are active in tech decisions",score:3},{text:"We have someone but they are stronger on finance than the technical side",score:2},{text:"We have someone but they are closer to engineering than finance",score:1},{text:"That role does not exist in our business today",score:0}]}
+  { id:1, category:"Visibility", categoryKey:"visibility", text:"Do you have a single, up to date register of all SaaS tools, licences and vendor contracts, with actuals tracked against budget at vendor level?", options:[{text:"No register exists",score:1},{text:"We have a partial list but it's not maintained",score:2},{text:"We have a register but don't track actuals against budget at vendor level",score:3},{text:"Yes, fully maintained with vendor level budget tracking",score:4}]},
+  { id:2, category:"Financial Efficiency", categoryKey:"financial", text:"Are unused or duplicate licences identified and removed within 30 days?", options:[{text:"We don't actively monitor this",score:1},{text:"We review occasionally but there's no set process",score:2},{text:"We review regularly but it takes longer than 30 days",score:3},{text:"Yes, identified and removed within 30 days",score:4}]},
+  { id:3, category:"Governance", categoryKey:"governance", text:"Do you capitalise development time and internally developed software in line with IAS 38 or US GAAP?", options:[{text:"No, we expense everything",score:1},{text:"We know we should but haven't implemented a process",score:2},{text:"We capitalise some costs but inconsistently",score:3},{text:"Yes, with a documented policy applied consistently",score:4}]},
+  { id:4, category:"Budget Management", categoryKey:"budget", text:"Is cloud and AI spend tracked and allocated by team, product and environment with monthly variance analysis?", options:[{text:"We see a total bill but that's it",score:1},{text:"We have some visibility but no formal allocation",score:2},{text:"We allocate by team but don't do variance analysis",score:3},{text:"Fully allocated with monthly variance analysis",score:4}]},
+  { id:5, category:"Forecasting", categoryKey:"forecasting", text:"Does your finance team jointly own a recurring tech cost review with engineering leadership, with actions tracked and followed up?", options:[{text:"There's no regular interaction between finance and engineering on costs",score:1},{text:"We meet occasionally but nothing structured",score:2},{text:"We have regular meetings but actions aren't formally tracked",score:3},{text:"Yes, jointly owned with tracked actions and follow ups",score:4}]},
+  { id:6, category:"Strategic Alignment", categoryKey:"strategic", text:"If your board asked for a plan to cut tech costs by 20% without impacting delivery, how quickly could you respond?", options:[{text:"We'd need weeks to pull the data together",score:1},{text:"We could give a rough answer but nothing credible",score:2},{text:"We could respond in a few days with a reasonable plan",score:3},{text:"We could respond within 48 hours with a credible plan",score:4}]}
 ];
 
 const categoryMeta = {
-  visibility:  { name: "Visibility",          max: 6 },
-  governance:  { name: "Governance",          max: 6 },
-  budget:      { name: "Budget Management",   max: 6 },
-  forecasting: { name: "Forecasting",         max: 6 },
-  financial:   { name: "Financial Efficiency",max: 6 },
-  strategic:   { name: "Strategic Alignment", max: 6 }
+  visibility:  { name: "Visibility",          max: 4 },
+  governance:  { name: "Governance",          max: 4 },
+  budget:      { name: "Budget Management",   max: 4 },
+  forecasting: { name: "Forecasting",         max: 4 },
+  financial:   { name: "Financial Efficiency",max: 4 },
+  strategic:   { name: "Strategic Alignment", max: 4 }
 };
 
 const TIERS = {
-  1: { number: 1, name: 'Exposed',          description: 'No visibility or governance across your technology spend. High probability of duplicate tooling, unused licences, and renewal leakage. You are likely losing 15 to 30% of your tech budget right now without knowing it.', exposure: '15 to 30%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is $750k to $3M in capital waste sitting undetected. Money that could be re-invested into growth or profitability.' },
-  2: { number: 2, name: 'At Risk',           description: 'Some visibility exists but governance is patchy. You are catching some waste but missing more. The gaps are costing you more than you realise.', exposure: '8 to 15%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is $400k to $1.5M in preventable loss. Money that could be re-invested into growth or profitability.' },
-  3: { number: 3, name: 'Partial Visibility', description: 'You have basic controls in place but blind spots remain. Spend is tracked in parts, not as a whole. There is meaningful waste you are not seeing.', exposure: '3 to 8%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is $150k to $800k in addressable waste. Money that could be re-invested into growth or profitability.' },
-  4: { number: 4, name: 'In Control',        description: 'Good foundations. Spend is visible and mostly governed. The focus now is sharpening what you have and closing the remaining gaps.', exposure: 'under 3%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, that is up to $300k in remaining exposure to close.' },
-  5: { number: 5, name: 'Optimised',         description: 'Your technology spend is fully visible, governed, and aligned to business outcomes. You are in the minority. Keep it that way.', exposure: 'under 1%', illustrative: 'Example: For a scale-up spending $5M to $10M on technology, residual waste is minimal and well-managed.' }
+  'at-risk':    { key:'at-risk',    number:1, name:'At Risk',    waste:'25% to 35%', exposure:'25% to 35%', benchmark:'On a $5m tech budget, this profile points to $1.25m to $1.75m in recoverable spend.', illustrative:'On a $5m tech budget, this profile points to $1.25m to $1.75m in recoverable spend.', description:'No foundational visibility or governance. The highest probability of duplicate tooling, unused licences, and unmanaged renewal risk.' },
+  'exposed':    { key:'exposed',    number:2, name:'Exposed',    waste:'15% to 25%', exposure:'15% to 25%', benchmark:'On a $5m tech budget, this profile points to $750k to $1.25m in recoverable spend.',    illustrative:'On a $5m tech budget, this profile points to $750k to $1.25m in recoverable spend.',    description:'Some controls exist but the gaps are material. Spend is being lost in the areas you are not looking.' },
+  'developing': { key:'developing', number:3, name:'Developing', waste:'8% to 15%',  exposure:'8% to 15%',  benchmark:'On a $5m tech budget, this profile points to $400k to $750k in recoverable spend.',      illustrative:'On a $5m tech budget, this profile points to $400k to $750k in recoverable spend.',      description:'Reasonable foundations but blind spots remain. The priority is closing the gaps before they compound.' },
+  'controlled': { key:'controlled', number:4, name:'Controlled', waste:'Under 8%',   exposure:'Under 8%',   benchmark:'On a $5m tech budget, residual exposure is likely under $400k.',                          illustrative:'On a $5m tech budget, residual exposure is likely under $400k.',                          description:'Strong controls and visibility across your technology spend. Focus now shifts to optimisation and strategic alignment.' }
 };
+
 function getTier(totalScore) {
-  if (totalScore >= 33) return TIERS[5];
-  if (totalScore >= 25) return TIERS[4];
-  if (totalScore >= 19) return TIERS[3];
-  if (totalScore >= 13) return TIERS[2];
-  return TIERS[1];
+  if (totalScore >= 21) return TIERS['controlled'];
+  if (totalScore >= 16) return TIERS['developing'];
+  if (totalScore >= 11) return TIERS['exposed'];
+  return TIERS['at-risk'];
 }
 
 let current = 0;
@@ -942,16 +977,49 @@ function updateNextBtn() {
 function goNext() {
   if (answers[questions[current].id] === undefined) return;
   if (current < questions.length - 1) { current++; renderQuestion(); }
-  else { showGate(); }
+  else { showScore(); }
 }
 
 function goBack() {
   if (current > 0) { current--; renderQuestion(); }
 }
 
-function showGate() {
+function showScore() {
+  const catScores = { visibility:0, governance:0, budget:0, forecasting:0, financial:0, strategic:0 };
+  questions.forEach(q => {
+    const idx = answers[q.id] ?? 0;
+    catScores[q.categoryKey] += q.options[idx].score;
+  });
+  const totalScore = Object.values(catScores).reduce((a,b) => a+b, 0);
+  const tier = getTier(totalScore);
+  lastTier = tier;
+  lastCatScores = catScores;
+
+  let weakestQId = 1, lowestScore = 5;
+  questions.forEach(q => {
+    const idx = answers[q.id] ?? 0;
+    const s = q.options[idx].score;
+    if (s < lowestScore) { lowestScore = s; weakestQId = q.id; }
+  });
+
+  const tierColors = { 'at-risk':'#ef4444', 'exposed':'#f97316', 'developing':'#f59e0b', 'controlled':'#22c55e' };
+  const color = tierColors[tier.key] || '#cccccc';
+
+  document.getElementById('score-tier-name').textContent = tier.name;
+  document.getElementById('score-tier-name').style.color = color;
+
+  const pct = Math.round(((totalScore - 6) / 18) * 100);
+  const fill = document.getElementById('score-indicator-fill');
+  fill.style.background = color;
+  fill.style.width = '0%';
+  document.getElementById('score-indicator-text').textContent = `Score: ${totalScore} / 24`;
+  document.getElementById('score-waste-text').textContent = `Estimated tech spend waste: ${tier.waste}`;
+  document.getElementById('score-bench-text').textContent = tier.benchmark;
+  document.getElementById('score-insight-text').textContent = QUESTION_INSIGHTS[weakestQId] || '';
+
   document.getElementById('screen-question').classList.add('hidden');
-  document.getElementById('screen-gate').classList.remove('hidden');
+  document.getElementById('screen-score').classList.remove('hidden');
+  setTimeout(() => { fill.style.width = pct + '%'; }, 200);
 }
 
 function submitGate() {
@@ -959,56 +1027,33 @@ function submitGate() {
   const emailInput = document.getElementById('gate-email');
   const nameError = document.getElementById('error-name');
   const emailError = document.getElementById('error-email');
-
   let valid = true;
-
-  nameInput.classList.remove('invalid');
-  emailInput.classList.remove('invalid');
-  nameError.classList.add('hidden');
-  emailError.classList.add('hidden');
-
+  nameInput.classList.remove('invalid'); emailInput.classList.remove('invalid');
+  nameError.classList.add('hidden'); emailError.classList.add('hidden');
   if (!nameInput.value.trim()) {
-    nameInput.classList.add('invalid');
-    nameError.textContent = 'Please enter your first name';
-    nameError.classList.remove('hidden');
-    valid = false;
+    nameInput.classList.add('invalid'); nameError.textContent = 'Please enter your first name'; nameError.classList.remove('hidden'); valid = false;
   }
-
   const emailVal = emailInput.value.trim().toLowerCase();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   if (!emailVal) {
-    emailInput.classList.add('invalid');
-    emailError.textContent = 'Please enter your work email';
-    emailError.classList.remove('hidden');
-    valid = false;
+    emailInput.classList.add('invalid'); emailError.textContent = 'Please enter your work email'; emailError.classList.remove('hidden'); valid = false;
   } else if (!emailRegex.test(emailVal)) {
-    emailInput.classList.add('invalid');
-    emailError.textContent = 'Please enter a valid email address';
-    emailError.classList.remove('hidden');
-    valid = false;
+    emailInput.classList.add('invalid'); emailError.textContent = 'Please enter a valid email address'; emailError.classList.remove('hidden'); valid = false;
   } else {
     const domain = emailVal.split('@')[1];
     if (BLOCKED_DOMAINS.includes(domain)) {
-      emailInput.classList.add('invalid');
-      emailError.textContent = 'Please use your work email';
-      emailError.classList.remove('hidden');
-      valid = false;
+      emailInput.classList.add('invalid'); emailError.textContent = 'Please use your work email'; emailError.classList.remove('hidden'); valid = false;
     }
   }
-
   if (!valid) return;
-
   capturedName = nameInput.value.trim();
   capturedEmail = emailVal;
-
-  // Compute category scores for lead capture
-  // Category scores computed in showResults / generateFindings
-
-  // Email fires after AI findings complete (so email includes full text)
-
-  document.getElementById('screen-gate').classList.add('hidden');
-  showResults();
+  document.getElementById('score-gate-form').classList.add('hidden');
+  document.getElementById('score-gate-confirmation').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('screen-score').classList.add('hidden');
+    showResults();
+  }, 1200);
 }
 
 function showResults() {
@@ -1033,9 +1078,9 @@ function showResults() {
   const scoreEl = document.getElementById('final-score');
   scoreEl.textContent = tier.name;
   scoreEl.className = 'score-number';
-  const tierColors = { 1: '#ef4444', 2: '#f97316', 3: '#f59e0b', 4: '#3b82f6', 5: '#22c55e' };
+  const tierColors = { 1: '#ef4444', 2: '#f97316', 3: '#f59e0b', 4: '#22c55e' };
   scoreEl.style.color = tierColors[tier.number] || '';
-  document.getElementById('final-raw-score').textContent = `${totalScore} / 36`;
+  document.getElementById('final-raw-score').textContent = `${totalScore} / 24`;
   const exposureEl = document.getElementById('final-exposure');
   exposureEl.innerHTML = `<span class="exposure-main">Your indicative exposure: <strong>${tier.exposure}</strong> of your technology spend.</span><span class="exposure-illustrative">${tier.illustrative}</span>`;
   document.getElementById('final-sub').textContent = tier.description;
@@ -1067,14 +1112,14 @@ async function generateFindings(catScores, tier, totalScore) {
   lastCatScores = catScores;
   const answerSummary = questions.map(q => {
     const idx = answers[q.id] ?? 0;
-    return `Q${q.id} (${q.category}): "${q.options[idx].text}" [score: ${q.options[idx].score}/3]`;
+    return `Q${q.id} (${q.category}): "${q.options[idx].text}" [score: ${q.options[idx].score}/4]`;
   }).join('\n');
 
   const catBreakdown = Object.entries(catScores).map(([key, score]) => `${categoryMeta[key].name}: ${score}/${categoryMeta[key].max}`).join(', ');
 
   const nameIntro = capturedName ? `Address the person as ${capturedName} in your opening sentence. ` : '';
 
-  const prompt = `You are a senior advisor at Forc Advisory. A company has just completed a Tech Cost Maturity Assessment and placed at ${tier.name} (raw score ${totalScore}/36).
+  const prompt = `You are a senior advisor at Forc Advisory. A company has just completed a Tech Cost Maturity Assessment and placed at ${tier.name} (raw score ${totalScore}/24).
 
 Category breakdown: ${catBreakdown}
 

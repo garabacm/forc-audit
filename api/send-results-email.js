@@ -82,7 +82,7 @@ function buildEmailHTML({ firstName, tierNumber, tierName, tierDescription, expo
   const catRows = Object.entries(categoryScores || {}).map(([cat, score]) => {
     return `<tr>
       <td style="padding:10px 0;font-size:13px;color:#444444;border-bottom:1px solid #eeeeee">${cat}</td>
-      <td style="padding:10px 0;font-size:13px;color:#2d3238;font-weight:600;text-align:right;border-bottom:1px solid #eeeeee">${score} / 6</td>
+      <td style="padding:10px 0;font-size:13px;color:#2d3238;font-weight:600;text-align:right;border-bottom:1px solid #eeeeee">${score} / 4</td>
     </tr>`;
   }).join('');
 
@@ -264,7 +264,7 @@ async function buildPDF({ firstName, tierNumber, tierName, tierDescription, expo
       doc.font('Helvetica').fontSize(11).fillColor(MID)
         .text(cat, M, y, { width: USABLE * 0.7, lineBreak: false });
       doc.font('Helvetica-Bold').fontSize(11).fillColor(DARK)
-        .text(`${score} / 6`, M, y, { align: 'right', width: USABLE, lineBreak: false });
+        .text(`${score} / 4`, M, y, { align: 'right', width: USABLE, lineBreak: false });
       y += 22;
       doc.moveTo(M, y - 4).lineTo(M + USABLE, y - 4).strokeColor('#eeeeee').lineWidth(0.4).stroke();
     }
