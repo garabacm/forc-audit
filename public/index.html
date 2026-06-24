@@ -728,7 +728,7 @@
   .score-ind-fill    { height:100%; border-radius:4px; transition:width 0.8s ease; }
   .score-ind-text    { font-size:13px; color:var(--text-dim); font-weight:500; }
   .score-waste-text  { font-size:15px; font-weight:600; color:var(--text-main); margin-bottom:10px; }
-  .score-bench-text  { font-size:13px; color:var(--text-dim); line-height:1.6; margin-bottom:20px; }
+  .score-bench-text  { font-size:14px; color:rgba(255,255,255,0.85); font-weight:500; line-height:1.65; margin-bottom:20px; border-left:3px solid rgba(255,255,255,0.2); padding-left:12px; }
   .score-insight-box { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px 16px; margin-bottom:28px; }
   .score-insight-box .insight-label { font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); display:block; margin-bottom:6px; font-weight:600; }
   .score-insight-box .insight-body  { font-size:13px; line-height:1.6; color:var(--text-main); }
@@ -1014,7 +1014,9 @@ function showScore() {
   fill.style.width = '0%';
   document.getElementById('score-indicator-text').textContent = `Score: ${totalScore} / 24`;
   document.getElementById('score-waste-text').textContent = `Estimated tech spend waste: ${tier.waste}`;
-  document.getElementById('score-bench-text').textContent = tier.benchmark;
+  const benchEl = document.getElementById('score-bench-text');
+  benchEl.textContent = tier.benchmark;
+  benchEl.style.borderLeftColor = color;
   document.getElementById('score-insight-text').textContent = QUESTION_INSIGHTS[weakestQId] || '';
 
   document.getElementById('screen-question').classList.add('hidden');
@@ -1126,20 +1128,20 @@ Category breakdown: ${catBreakdown}
 Their answers:
 ${answerSummary}
 
-Write a short personalised findings brief using the format below. ${nameIntro}
+${nameIntro ? `Address the findings to ${capturedName}.` : ''}
 
-Format:
-- One opening sentence on what the maturity tier tells you. Be direct, not dramatic.
-- 4 to 5 bullet points. Each bullet is one clear sentence. Lead with the specific issue, then the business consequence — this might be a cost, a governance gap, a missed finance partnership opportunity, or a strategic risk. Reference the actual categories and answer patterns above. Mix cost recovery findings with strategic observations: where could finance be a better business partner, where does lack of vendor governance limit strategic optionality, where does contract exposure reduce the CFO's ability to plan?
-- One closing sentence (not a bullet) mentioning that Forc Advisory can run a full audit, covering both cost recovery and positioning finance as a strategic operating partner.
+Write 5 to 8 bullet points only. No opening sentence. No closing sentence. No prose before or after the bullets.
 
-Rules:
-- No paragraphs. No m-dashes. No hyphens inside sentences. No hyperbole. No phrases like "it is clear that", "significant impact", or "it is worth noting".
-- Each bullet point must start with "- " on its own line.
-- Bullets must be separated by a blank line from each other and from surrounding text.
-- Write like a direct, experienced colleague giving honest feedback. Conversational but precise.
-- Do not frame every finding as a cost problem. Some should read as strategic or governance observations.
-- Under 220 words total.`;
+Each bullet names one specific gap from their answers and states what needs to happen as a result — the outcome, not how to get there. One clear sentence per bullet.
+
+Guidelines:
+- Draw directly from the category scores and answer patterns above. Name the specific gap.
+- Mix cost recovery gaps (unused licences, untracked cloud spend, missed capitalisation) with governance and strategic gaps (no variance process, finance not at the table, inability to respond to board pressure).
+- At least 2 bullets should touch on the absence of cross-functional ownership between finance and engineering — where decisions are being made without the right people in the room. Do not name Forc Advisory or sell anything. Let the gap speak.
+- Frame structural gaps as what the business cannot currently do, not what it is doing wrong.
+- Do not use the word "implement". Do not use m-dashes. No hyperbole. No phrases like "it is clear" or "it is worth noting".
+- Each bullet starts with "- " on its own line. Bullets separated by a blank line.
+- Under 280 words total.`;
 
   const findingsEl = document.getElementById('findings-body');
 
