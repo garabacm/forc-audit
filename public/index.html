@@ -1152,61 +1152,37 @@ Guidelines:
       body: JSON.stringify({ prompt })
     });
 
-    findingsEl.innerHTML = '<span id="findings-text"></span><span class="cursor"></span>';
-    const textEl = document.getElementById('findings-text');
-    let fullText = '';
-    let streamError = null;
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${response.status}`);
+    }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    const data = await response.json();
+    const fullText = (data.text || '').trim();
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep incomplete last line
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.type === 'forc_error') {
-              streamError = parsed.message;
-              break;
-            }
-            if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-              fullText += parsed.delta.text;
-              const blocks = fullText.split('\n\n').filter(b => b.trim());
-              textEl.innerHTML = blocks.map(block => {
-                const blines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
-                const hasBullets = blines.some(l => l.startsWith('- '));
-                if (!hasBullets) return `<p>${blines.join(' ')}</p>`;
-                const parts = [];
-                let bullets = [];
-                blines.forEach(l => {
-                  if (l.startsWith('- ')) {
-                    bullets.push(`<li>${l.slice(2)}</li>`);
-                  } else {
-                    if (bullets.length) { parts.push(`<ul>${bullets.join('')}</ul>`); bullets = []; }
-                    parts.push(`<p>${l}</p>`);
-                  }
-                });
-                if (bullets.length) parts.push(`<ul>${bullets.join('')}</ul>`);
-                return parts.join('');
-              }).join('');
-            }
-          } catch(e) {}
+    if (!fullText) {
+      throw new Error('Empty response');
+    }
+
+    // Render bullets
+    const blocks = fullText.split('\n\n').filter(b => b.trim());
+    findingsEl.innerHTML = blocks.map(block => {
+      const lines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
+      const hasBullets = lines.some(l => l.startsWith('- '));
+      if (!hasBullets) return `<p>${lines.join(' ')}</p>`;
+      const parts = [];
+      let bullets = [];
+      lines.forEach(l => {
+        if (l.startsWith('- ')) {
+          bullets.push(`<li>${l.slice(2)}</li>`);
+        } else {
+          if (bullets.length) { parts.push(`<ul>${bullets.join('')}</ul>`); bullets = []; }
+          parts.push(`<p>${l}</p>`);
         }
-      }
-    }
-
-    document.querySelector('.cursor')?.remove();
-
-    if (streamError || !fullText.trim()) {
-      findingsEl.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-style:italic">Unable to generate findings. Please try again or contact Forc Advisory directly.</p>';
-    }
+      });
+      if (bullets.length) parts.push(`<ul>${bullets.join('')}</ul>`);
+      return parts.join('');
+    }).join('');
 
     findingsRawText = fullText;
     document.getElementById('pdf-btn-wrap').style.display = 'block';
@@ -1231,7 +1207,8 @@ Guidelines:
     }).catch(err => console.error('Send results email failed:', err));
 
   } catch(err) {
-    findingsEl.innerHTML = '<p style="color:rgba(255,255,255,0.35);font-style:italic">Could not generate findings brief. Please check your connection and try again.</p>';
+    console.error('generateFindings error:', err.message);
+    findingsEl.innerHTML = `<p style="color:rgba(255,255,255,0.5);font-style:italic">Could not generate findings (${err.message}). Please try again.</p>`;
   }
 }
 

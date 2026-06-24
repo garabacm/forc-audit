@@ -9,9 +9,10 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('ANTHROPIC_API_KEY is not set');
+    return res.status(500).json({ error: 'API key not configured' });
+  }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -24,7 +25,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1024,
-        stream: true,
+        stream: false,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -32,24 +33,15 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const errText = await response.text();
       console.error('Anthropic API error:', response.status, errText);
-      res.write(`data: {"type":"forc_error","message":"API error ${response.status}"}\n\n`);
-      res.end();
-      return;
+      return res.status(502).json({ error: `Anthropic error ${response.status}`, detail: errText });
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    return res.status(200).json({ text });
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(decoder.decode(value));
-    }
-
-    res.end();
   } catch (err) {
     console.error('generate handler error:', err.message);
-    res.write(`data: {"type":"forc_error","message":"${err.message}"}\n\n`);
-    res.end();
+    return res.status(500).json({ error: err.message });
   }
 }
